@@ -1,0 +1,25 @@
+[project]
+name = "dataset-converters"
+version = "0.1.0"
+description = "Converters from published music-analysis datasets to TiLiA files"
+requires-python = ">=3.12"
+# pandas 3's copy-on-write would change bpsd's measures.csv (chained assignment in process_measures_df)
+dependencies = ["pandas>=2.0,<3"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[dependency-groups]
+dev = ["pytest"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["common"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests", "bpsd/tests", "dcml-mozart/tests"]
+addopts = "--import-mode=importlib"
