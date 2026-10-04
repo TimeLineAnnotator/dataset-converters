@@ -24,5 +24,5 @@ packages = ["common"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["tests", "bpsd/tests", "dcml-mozart/tests", "dezrann-mozart/tests"]
+testpaths = ["tests", "bpsd/tests", "dcml-mozart/tests", "dezrann-mozart/tests", "swd/tests"]
 addopts = "--import-mode=importlib"
