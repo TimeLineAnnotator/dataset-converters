@@ -7,14 +7,13 @@ build/
 dist/
 
 # converter outputs and downloaded datasets
-import-data/
-import-all.txt
 tla/
 *.tla
 Beethoven_Piano_Sonata_Dataset_v*/
 dcml-mozart/out/
 dezrann-mozart/out/
 swd/out/
+bpsd/out/
 
 # caches
 .cache/
