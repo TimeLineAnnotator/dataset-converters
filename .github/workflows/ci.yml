@@ -8,11 +8,12 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       QT_QPA_PLATFORM: offscreen
-      TILIA: tilia
       DATASET_CONVERTERS_CACHE: ${{ github.workspace }}/.cache/dataset-converters
+      # TiLiA's command line runs from an environment of its own (see "Install TiLiA's command line")
+      TILIA: ${{ github.workspace }}/.tilia-cli/bin/tilia
     steps:
       - uses: actions/checkout@v4
 
@@ -34,17 +35,23 @@ jobs:
             libxcb-xinerama0 libxcb-xkb-dev libxkbcommon-dev libopengl-dev libvulkan-dev \
             ffmpeg libavcodec-dev libavformat-dev libswscale-dev
 
-      # Pinned to the commit of the v0.7.0 tag: "@v0.7.0" would pick up a branch of the same name (0.6.2)
-      - name: Install TiLiA and this repository
+      # The converters need `timelines add harmony` and `timelines import harmony`, which are in
+      # TimeLineAnnotator/desktop#575 and #632 but in no release yet: pinned to #632's head until they are.
+      - name: Install TiLiA's command line
+        run: |
+          python -m venv .tilia-cli
+          .tilia-cli/bin/pip install "TiLiA @ git+https://github.com/TimeLineAnnotator/desktop@eb4f29bccf3605cbd36caaedf097e726367d9122"
+
+      # This repository, with format-converters (pinned) and, through it, TiLiA 0.7.0's parser as a library
+      - name: Install this repository
         run: |
           python -m pip install --upgrade pip
-          pip install "TiLiA @ git+https://github.com/TimeLineAnnotator/desktop@eb605f720847cf86f47834e71bc5bd9f8e0cd606"
           pip install -e . pytest
 
       - uses: actions/cache@v4
         with:
           path: ${{ env.DATASET_CONVERTERS_CACHE }}
-          key: dataset-cache-${{ hashFiles('conftest.py', 'tests/**', 'bpsd/tests/**', 'dcml-mozart/tests/**') }}
+          key: dataset-cache-${{ hashFiles('conftest.py', 'tests/**', '*/tests/**') }}
           restore-keys: dataset-cache-
 
       - name: Run tests
