@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "Converters from published music-analysis datasets to TiLiA files"
 requires-python = ">=3.12"
 # pandas 3's copy-on-write would change bpsd's measures.csv (chained assignment in process_measures_df)
-dependencies = ["pandas>=2.0,<3"]
+dependencies = [
+    "pandas>=2.0,<3",
+    "format-converters @ git+https://github.com/TimeLineAnnotator/format-converters@5c4f8714538b8ff1fe43c5dd6550ce1822a4219a",
+]
 
 [project.optional-dependencies]
 dev = ["pytest"]
