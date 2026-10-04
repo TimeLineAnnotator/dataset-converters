@@ -5,7 +5,7 @@ Scripts that turn published music-analysis datasets into [TiLiA](https://github.
 | Folder | Dataset | Formerly |
 | --- | --- | --- |
 | `bpsd/` | Beethoven Piano Sonata Dataset | `TimeLineAnnotator/bpsd-to-tilia` |
-| `dcml-mozart/` | DCML annotations of Mozart's piano sonatas | `TimeLineAnnotator/dcml-to-tilia` |
+| `dcml-mozart/` | DCML's Annotated Mozart Piano Sonatas (v2.3, 54 movements) | `TimeLineAnnotator/dcml-to-tilia` |
 
 The datasets themselves are not stored here: the converters download them, and the TiLiA files they produce are build outputs.
 
@@ -25,7 +25,7 @@ That commit is the `v0.7.0` tag. Do not write `@v0.7.0`: a branch of the same na
 ## Run a converter
 
 - `python bpsd/main.py [--dataset DIR] [--pieces ...] [--performers ...] [--out DIR] [--tla-dir DIR] [--all-script FILE]`: see [`bpsd/README.md`](bpsd/README.md).
-- `python dcml-mozart/main.py <harmonies.tsv>`: writes its CSVs and `import-script.txt` into the current directory; see [`dcml-mozart/README.md`](dcml-mozart/README.md). Its script still uses TiLiA's old `timeline import csv` syntax, which TiLiA 0.7.0 rejects.
+- `python dcml-mozart/convert.py --out DIR [--only ID ...] [--package DIR] [--no-tilia]`: one `.tla` per movement of the DCML Mozart sonatas, on a quarter-second time convention (there is no recording); see [`dcml-mozart/README.md`](dcml-mozart/README.md).
 
 ## Run the tests
 
