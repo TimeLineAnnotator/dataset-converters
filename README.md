@@ -7,6 +7,7 @@ Scripts that turn published music-analysis datasets into [TiLiA](https://github.
 | `bpsd/` | Beethoven Piano Sonata Dataset | `TimeLineAnnotator/bpsd-to-tilia` |
 | `dcml-mozart/` | DCML's Annotated Mozart Piano Sonatas (v2.3, 54 movements) | `TimeLineAnnotator/dcml-to-tilia` |
 | `dezrann-mozart/` | Dezrann's structure and texture of Mozart's sonatas K. 279, 280 and 283 (v1.0), added to the DCML files | |
+| `swd/` | Schubert Winterreise Dataset v2.1 | |
 
 The datasets themselves are not stored here: the converters download them, and the TiLiA files they produce are build outputs.
 
@@ -29,6 +30,7 @@ That commit is the `v0.7.0` tag. Do not write `@v0.7.0`: a branch of the same na
 - `python dcml-mozart/convert.py --out DIR [--only ID ...] [--package DIR] [--no-tilia]`: one `.tla` per movement of the DCML Mozart sonatas, on a quarter-second time convention (there is no recording); see [`dcml-mozart/README.md`](dcml-mozart/README.md).
 
 - `python dezrann-mozart/convert.py --dcml DIR --out DIR [--only ID ...] [--no-tilia]`: adds Dezrann's sonata-form structure and texture to the converted DCML files of nine movements; see [`dezrann-mozart/README.md`](dezrann-mozart/README.md).
+- `python swd/convert.py --out DIR [--only ID ...] [--package DIR] [--no-tilia] [--audio]`: one TiLiA file per song and performance (216), with a zip package; see [`swd/README.md`](swd/README.md).
 
 ## Run the tests
 

@@ -14,6 +14,7 @@ tla/
 Beethoven_Piano_Sonata_Dataset_v*/
 dcml-mozart/out/
 dezrann-mozart/out/
+swd/out/
 
 # caches
 .cache/

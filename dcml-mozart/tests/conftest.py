@@ -1,6 +1,5 @@
 """Fixtures: the four fixture movements' tables, downloaded (md5-checked) into the cache."""
 import importlib.util
-import json
 from pathlib import Path
 
 import pytest
@@ -33,22 +32,3 @@ def tables(files):
 def movements(files, tables):
     meta = convert.read_metadata(files["metadata.tsv"])
     return {p: convert.build_movement(p, h, m, meta[p]) for p, (h, m) in tables.items()}
-
-
-@pytest.fixture(scope="session")
-def tilia_keeps_harmony_display(tilia, tmp_path_factory):
-    """Whether this TiLiA's harmony CSV import keeps display_mode and custom_text.
-
-    Releases up to 0.7.0 parse those columns and drop them; TimeLineAnnotator/desktop#631 fixes that.
-    """
-    from common.runner import run_script
-
-    d = tmp_path_factory.mktemp("display-probe")
-    (d / "h.csv").write_text("harmony_or_key,time,symbol,display_mode,custom_text\nharmony,0,C,custom,probe\n")
-    (d / "s.txt").write_text(
-        "metadata set-media-length 4\ntimelines add harmony --name H\n"
-        f"timelines import harmony by-time --target-name H --file {d / 'h.csv'}\nsave {d / 'p.tla'} --overwrite\n")
-    run_script(d / "s.txt", tilia=tilia)
-    data = json.loads((d / "p.tla").read_text())
-    return any(c.get("custom_text") == "probe" for t in data["timelines"].values() if t.get("name") == "H"
-               for c in t["components"].values())
