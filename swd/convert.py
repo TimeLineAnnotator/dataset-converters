@@ -19,6 +19,7 @@ from common.download import _cache_path, _md5, default_cache_dir, fetch_member
 from common.package import build_package
 from common.runner import ScriptError, run_script
 from format_converters.harmony import translate_chord, translate_key
+from swd import spelling
 from swd.download import fetch_resumable
 
 ARCHIVE_URL = "https://zenodo.org/records/10839767/files/Schubert_Winterreise_Dataset_v2-1.zip?download=1"
@@ -47,12 +48,15 @@ NOTES = (
     "Schubert Winterreise Dataset (SWD) v2.1, doi:10.5281/zenodo.10839767, by Christof Weiß, Frank Zalkow, "
     "Vlora Arifi-Müller, Meinard Müller, Hendrik Vincent Koops, Anja Volk and Harald G. Grohganz. "
     "Licence CC BY 3.0. Measures, structure, chords and keys are the dataset's annotations of this performance, "
-    "converted for TiLiA; bar numbers are those printed in the IMSLP (Peters) score."
+    "converted for TiLiA; bar numbers are those printed in the IMSLP (Peters) score. Chords and keys are spelled "
+    "as the dataset's score annotations spell them, transposed to the performance; Roman numerals read against "
+    "annotator 1's local keys."
 )
 LAYERS = ["Measures", "Structure", "Harmony/keys", "Harmony/chords",
           "Local keys (ann1)", "Local keys (ann2)", "Local keys (ann3)"]
 NO_CHORD = {"N", "X", ""}
 ANNOTATORS = (1, 2, 3)
+KEY_ANNOTATOR = 1  # whose local keys are on the Harmony timeline, so that the Roman numerals read against them
 
 CHORD_COLUMNS = ["harmony_or_key", "time", "symbol", "display_mode", "custom_text", "comments"]
 
@@ -135,6 +139,7 @@ def read_item(source, item, titles=None, keys=None):
         "printed": source.rows(f"{a}ann_score-IMSLP_measure/{work}.csv"),
         "structure": source.rows(f"{a}ann_audio_structure/{item}.csv"),
         "chord": source.rows(f"{a}ann_audio_chord/{item}.csv"),
+        "score_chord": source.rows(f"{a}ann_score_chord/{work}.csv"),
         "localkey": {n: source.rows(f"{a}ann_audio_localkey-ann{n}/{item}.csv") for n in ANNOTATORS},
     }
 
@@ -171,6 +176,60 @@ def is_chord(row):
     return row["shorthand"].strip() not in NO_CHORD
 
 
+def respelled(data):
+    """The item's chords and keys spelled from the score (see swd/spelling.py).
+
+    Returns the chord labels (one per row of the chord file, None for N and X), the global key, each
+    annotator's local keys (rows with the key replaced), and the semitones by which an annotator's keys were
+    moved to agree with the chords (0 except for two annotators in D911-06 and D911-22).
+    """
+    score = [spelling.parse(r["shorthand"]) for r in data["score_chord"]]
+    performance = [spelling.parse(r["shorthand"]) for r in data["chord"]]
+    interval = spelling.transposition(score, spelling.chord_shift(score, performance, data["item"]))
+    labels = [spelling.respell(c, interval) if c else None for c in score]
+    spelled = spelling.spellings([spelling.parse(l) for l in labels if l])
+    timed = [(float(r["start"]), p) for r, p in zip(data["chord"], performance)]
+
+    def key(label, offset=0):
+        tonic, mode = label.strip().split(":")
+        return spelling.key_label((spelling.pitch_class(tonic) + offset) % 12, mode, spelled)
+
+    local, offsets = {}, {}
+    for n in ANNOTATORS:
+        offsets[n] = spelling.key_offset(data["localkey"][n], timed)
+        local[n] = [dict(r, key=key(r["key"], offsets[n])) for r in data["localkey"][n]]
+    global_key = key(data["globalkey"])
+    # a key written enharmonically (F-sharp minor for G-flat minor) takes the chords in it along
+    moves = {k: spelling.enharmonic_shift(k, spelled)
+             for k in {global_key, *(r["key"] for r in local[KEY_ANNOTATOR])}}
+    return {"chords": labels, "globalkey": global_key, "localkey": local, "offsets": offsets,
+            "moves": {k: v for k, v in moves.items() if v is not None}}
+
+
+def key_rows(data, keys, global_key):
+    """The keys of the Harmony timeline: the annotator's, and the global key where a chord falls outside them."""
+    spans = [(float(r["start"]), float(r["end"])) for r in keys]
+    rows = [(r["start"], r["key"]) for r in keys]
+    covered = True
+    for r in data["chord"]:
+        if not is_chord(r):
+            continue
+        t = float(chord_start(r))
+        inside = any(start <= t < end for start, end in spans)
+        if not inside and covered:
+            rows.append((chord_start(r), global_key))
+        covered = inside
+    return sorted(rows, key=lambda r: float(r[0]))
+
+
+def key_in_force(rows, time):
+    current = rows[0][1]
+    for start, key in rows:
+        if float(start) <= time:
+            current = key
+    return current
+
+
 def build_tables(data):
     """The CSV tables of an item: name -> (header, rows)."""
     numbers = printed_numbers(data)
@@ -178,17 +237,25 @@ def build_tables(data):
 
     structure = [[r["start"], r["end"], 1, r["structure"], ""] for r in data["structure"]]
 
-    global_key = _key(data["globalkey"])
-    chords = [r for r in data["chord"] if is_chord(r)]
-    first = chord_start(chords[0]) if chords else "0"
-    harmony = [["key", first, global_key, "letter", "", ""]]
+    spelled = respelled(data)
+    keys = key_rows(data, spelled["localkey"][KEY_ANNOTATOR], spelled["globalkey"])
+    harmony = [["key", t, _key(k), "letter", "", ""] for t, k in keys]
     unparsed = []
-    for r in chords:
-        res = _translate(r["shorthand"].strip(), global_key)
+    for r, label in zip(data["chord"], spelled["chords"]):
+        if not is_chord(r):
+            continue
+        key = key_in_force(keys, float(chord_start(r)))
+        if key in spelled["moves"]:
+            label = spelling.respell(spelling.parse(label), spelled["moves"][key])
+        res = _translate(label, _key(key))
         if res.outcome == "none":
-            unparsed.append([chord_start(r), r["shorthand"].strip(), res.comments])
+            unparsed.append([chord_start(r), label, res.comments])
         else:
-            harmony.append(["harmony", chord_start(r), res.symbol, res.display_mode, res.custom_text, res.comments])
+            # letter symbols carry the spelling; shown as Roman numerals, like BPSD's and DCML's chords
+            mode = "roman" if res.display_mode == "letter" else res.display_mode
+            harmony.append(["harmony", chord_start(r), res.symbol, mode, res.custom_text, res.comments])
+    # a key and a chord at the same time: the key first, so that the chord reads against it
+    harmony.sort(key=lambda row: (float(row[1]), row[0] != "key"))
 
     tables = {
         "measures": (["time", "measure", "is_first_in_measure"], measures),
@@ -197,7 +264,7 @@ def build_tables(data):
         "unparsed": (["time", "label", "comments"], unparsed),
     }
     for n in ANNOTATORS:
-        rows = [["key", r["start"], _key(r["key"]), "letter", "", ""] for r in data["localkey"][n]]
+        rows = [["key", r["start"], _key(r["key"]), "letter", "", ""] for r in spelled["localkey"][n]]
         tables[f"localkeys-ann{n}"] = (CHORD_COLUMNS, rows)
     return tables
 
@@ -290,7 +357,9 @@ def count_tla(path):
 
 
 def source_rows(data):
-    out = {"Measures": len(data["measure"]), "Structure": len(data["structure"]), "Harmony/keys": 1,
+    spelled = respelled(data)
+    keys = key_rows(data, spelled["localkey"][KEY_ANNOTATOR], spelled["globalkey"])
+    out = {"Measures": len(data["measure"]), "Structure": len(data["structure"]), "Harmony/keys": len(keys),
            "Harmony/chords": sum(1 for r in data["chord"] if is_chord(r))}
     for n in ANNOTATORS:
         out[f"Local keys (ann{n})"] = len(data["localkey"][n])
@@ -325,7 +394,11 @@ def convert_item(source, item, out, *, tilia=True, audio=False, titles=None, key
         return None
     run_script_retrying(script)
     counts, rows = count_tla(tla), source_rows(data)
-    return {layer: {"components": counts[layer], "source_rows": rows[layer]} for layer in LAYERS}
+    entry = {layer: {"components": counts[layer], "source_rows": rows[layer]} for layer in LAYERS}
+    moved = {f"Local keys (ann{n})": o for n, o in respelled(data)["offsets"].items() if o}
+    if moved:
+        entry["keys_moved_to_the_chords"] = moved  # semitones
+    return entry
 
 
 def convert_all(source, out, ids, *, tilia=True, audio=False, log=print):

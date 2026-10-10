@@ -52,19 +52,26 @@ def test_structure_has_one_level(data, written):
 
 
 # ---------------------------------------------------------------- harmony
-def test_the_global_key_comes_first_at_the_first_chord(written):
+def test_annotator_1s_keys_are_the_harmony_timelines_keys(data, written):
     for item, key in ((SONG1, "c"), (SONG2, "g")):  # HU33 sings song 1 in C minor, song 2 in G minor
         rows = written[item]["harmony"]
-        assert rows[0]["harmony_or_key"] == "key"
-        assert rows[0]["symbol"] == key
-        assert rows[0]["time"] == rows[1]["time"]
-        assert [r["harmony_or_key"] for r in rows[1:]] == ["harmony"] * (len(rows) - 1)
+        assert (rows[0]["harmony_or_key"], rows[0]["symbol"]) == ("key", key)
+        assert rows[0]["time"] == rows[1]["time"]  # the key comes before the chord at the same time
+        keys = [(r["time"], r["symbol"]) for r in rows if r["harmony_or_key"] == "key"]
+        assert keys == [(r["time"], r["symbol"]) for r in written[item]["localkeys-ann1"]]
+    assert [k for _, k in keys][:3] == ["g", "B-", "d"]
+
+
+def test_chords_show_as_roman_numerals(written):
+    for item in ITEMS:
+        modes = {r["display_mode"] for r in written[item]["harmony"] if r["harmony_or_key"] == "harmony"}
+        assert modes == {"roman", "custom"}
 
 
 def test_harte_chords_are_written_as_format_converters_report_them(written):
     rows = written[SONG1]["harmony"]
     c = next(r for r in rows if r["symbol"] == "Cm/G")  # C:min/G
-    assert (c["display_mode"], c["custom_text"], c["comments"]) == ("letter", "", "")
+    assert (c["display_mode"], c["custom_text"], c["comments"]) == ("roman", "", "")
     # B:dim7/C: TiLiA stores only Fdim/C, so it shows the label as custom text and says why
     approx = next(r for r in rows if r["custom_text"] == "B:dim7/C")
     assert approx["symbol"] == "Fdim/C"
@@ -83,8 +90,9 @@ def test_every_display_mode_is_filled_and_custom_has_text(written):
 def test_no_chord_labels_are_not_placed_and_unparsed_ones_become_markers(data, written):
     d = data[SONG2]
     chords = [r for r in d["chord"] if convert.is_chord(r)]
-    harmony, unparsed = written[SONG2]["harmony"], written[SONG2]["unparsed"]
-    assert len(harmony) - 1 + len(unparsed) == len(chords)
+    harmony = [r for r in written[SONG2]["harmony"] if r["harmony_or_key"] == "harmony"]
+    unparsed = written[SONG2]["unparsed"]
+    assert len(harmony) + len(unparsed) == len(chords)
     assert unparsed[0] == {"time": "1.56", "label": "D:(b9)",
                            "comments": "no symbol that TiLiA's parser reads as this chord"}
     assert "D:(b9)" not in [r["custom_text"] for r in harmony]
@@ -93,9 +101,11 @@ def test_no_chord_labels_are_not_placed_and_unparsed_ones_become_markers(data, w
 def test_n_and_x_rows_are_not_chords_and_do_not_move_the_key(data):
     d = dict(data[SONG2])
     pad = {"start": "0", "end": "0.3", "shorthand": "N", "extended": "N"}
-    d["chord"] = [pad, dict(pad, shorthand="X", extended="X"), dict(pad, shorthand=""), *d["chord"]]
+    pads = [pad, dict(pad, shorthand="X", extended="X"), dict(pad, shorthand="")]
+    d["chord"] = [*pads, *d["chord"]]
+    d["score_chord"] = [*pads, *d["score_chord"]]
     harmony = convert.build_tables(d)["harmony"][1]
-    assert len(harmony) == 1 + 66 and harmony[0][1] == "0.3"
+    assert sum(r[0] == "harmony" for r in harmony) == 66 and harmony[0][1] == "0.3"
     assert convert.source_rows(d)["Harmony/chords"] == 69
 
 
@@ -173,7 +183,7 @@ def test_tla_timelines_and_bar_numbers(converted):
 def test_tla_chords_as_reported(converted):
     out, _ = converted
     _, tl = read_tla(out / "tla" / f"{SONG2}.tla")
-    assert [c["kind"] for c in components(tl["Harmony"])].count("MODE") == 1
+    assert [c["kind"] for c in components(tl["Harmony"])].count("MODE") == 12
     assert [c["time"] for c in components(tl["Chords (unparsed)"])][:2] == [1.56, 3.16]
     keys = components(tl["Local keys (ann1)"])
     assert {c["kind"] for c in keys} == {"MODE"} and len(keys) == 12
@@ -185,7 +195,7 @@ def test_tla_chord_display(converted, tilia_keeps_harmony_display):
     out, _ = converted
     _, tl = read_tla(out / "tla" / f"{SONG2}.tla")
     custom = [c for c in components(tl["Harmony"]) if c["kind"] == "HARMONY" and c["display_mode"] == "custom"]
-    assert {c["custom_text"] for c in custom} == {"G:(3,5,b7,b9)/B", "G:(3,b5,b7,b9)/C#"}
+    assert {c["custom_text"] for c in custom} == {"G:(3,5,b7,b9)/B", "G:(3,b5,b7,b9)/Db"}  # spelled from the score
     assert all(c["comments"] for c in custom)
 
 
