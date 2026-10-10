@@ -25,6 +25,7 @@ if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
 from common.download import default_cache_dir, fetch, fetch_member  # noqa: E402
+from common.lint import lint  # noqa: E402
 from common.package import build_package  # noqa: E402
 from common.runner import run_script  # noqa: E402
 
@@ -337,7 +338,7 @@ def prepare_item(item: str, source, out: Path, *, audio_source=None, names=None)
     script_path.write_text(script, encoding="utf-8")
     tla.parent.mkdir(parents=True, exist_ok=True)
     return {
-        "script": script_path, "tla": tla,
+        "script": script_path, "tla": tla, "harmony_csv": csvs["harmony"],
         "source_rows": {
             "Measures": len(measures),
             "Structure": sum(1 for r in structure),
@@ -372,6 +373,7 @@ def convert(items: list[str], out, *, source=None, audio_source=None, run_tilia:
             found = count_tla(prepared["tla"])
             summary[item] = {layer: {"components": found[layer], "source_rows": n}
                              for layer, n in prepared["source_rows"].items()}
+            summary[item]["lint"] = lint(prepared["tla"], [prepared["harmony_csv"]])
         else:
             summary[item] = {layer: {"components": None, "source_rows": n}
                              for layer, n in prepared["source_rows"].items()}

@@ -16,6 +16,7 @@ import zipfile
 from pathlib import Path
 
 from common.download import _cache_path, _md5, default_cache_dir, fetch_member
+from common.lint import lint
 from common.package import build_package
 from common.runner import ScriptError, run_script
 from format_converters.harmony import translate_chord, translate_key
@@ -395,6 +396,7 @@ def convert_item(source, item, out, *, tilia=True, audio=False, titles=None, key
     run_script_retrying(script)
     counts, rows = count_tla(tla), source_rows(data)
     entry = {layer: {"components": counts[layer], "source_rows": rows[layer]} for layer in LAYERS}
+    entry["lint"] = lint(tla, [paths["harmony"]])
     moved = {f"Local keys (ann{n})": o for n, o in respelled(data)["offsets"].items() if o}
     if moved:
         entry["keys_moved_to_the_chords"] = moved  # semitones

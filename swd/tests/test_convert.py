@@ -157,11 +157,18 @@ def test_tla_counts_equal_source_rows(converted):
     out, summary = converted
     assert sorted(summary) == sorted(ITEMS)
     for item, layers in summary.items():
+        layers = {k: v for k, v in layers.items() if k != "lint"}
         assert list(layers) == convert.LAYERS
         for layer, counts in layers.items():
             assert counts["components"] == counts["source_rows"], (item, layer)
     assert summary[SONG1]["Measures"]["source_rows"] == 138
     assert summary[SONG2]["Harmony/chords"]["source_rows"] == 69
+
+
+def test_lint_finds_no_errors(converted):
+    _, summary = converted
+    for item, entry in summary.items():
+        assert entry["lint"]["errors"] == 0, (item, entry["lint"]["examples"])
 
 
 def test_tla_timelines_and_bar_numbers(converted):

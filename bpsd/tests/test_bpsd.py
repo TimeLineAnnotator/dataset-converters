@@ -199,10 +199,17 @@ def test_components_equal_source_rows(converted):
     summary = json.loads((converted / "summary.json").read_text())
     assert set(summary) == set(FIXTURES)
     for item, layers in summary.items():
+        layers = {k: v for k, v in layers.items() if k != "lint"}
         assert set(layers) == {"Measures", "Structure", "Harmony/keys", "Harmony/chords"}
         for layer, counts in layers.items():
             assert counts["components"] == counts["source_rows"], (item, layer)
     assert summary[FIXTURES[0]]["Measures"]["source_rows"] == 202
+
+
+def test_lint_finds_no_errors(converted):
+    summary = json.loads((converted / "summary.json").read_text())
+    for item, entry in summary.items():
+        assert entry["lint"]["errors"] == 0, (item, entry["lint"]["examples"])
 
 
 def test_tla_timelines_and_metadata(converted):

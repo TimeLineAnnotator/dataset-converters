@@ -33,7 +33,7 @@ python swd/convert.py --out DIR [--only ID ...] [--package DIR] [--no-tilia] [--
 - `DIR/csv/<ID>/*.csv` and `DIR/scripts/<ID>.txt` are written for each item, the script is run through TiLiA
   (`common.runner.run_script`) and saved as `DIR/tla/<ID>.tla`; `DIR/summary.json` holds, for each layer of each item, the
   number of components in the saved file and the number of source rows, and, under `keys_moved_to_the_chords`, the
-  local-key timelines moved to agree with the chords (in semitones).
+  local-key timelines moved to agree with the chords (in semitones), and under `lint` the checks of `common.lint`.
 - `--only` converts the given items, such as `Schubert_D911-01_HU33`. Without the whole archive in the cache, only the
   files an item needs are downloaded (HTTP range requests, checked against `members.json`).
 - `--package DIR` builds `DIR/swd-v2.1-tilia.zip` from the `.tla` files without media or file paths, with `LICENSE` and
