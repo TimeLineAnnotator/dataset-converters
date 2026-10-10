@@ -5,7 +5,8 @@
 Keys, chord roots and sections are read from the saved .tla file, as TiLiA stores them, whatever the source
 wrote (letter symbols or Roman numerals). Slash basses are read from the harmony CSVs, since TiLiA does not keep
 a bass that isn't a chord tone. Chords shown as custom text are skipped: their symbol is an approximation that
-TiLiA holds, with the source label as the text.
+TiLiA holds, with the source label as the text. So are diminished ninths, which stand for 7-flat-9 chords
+until TiLiA has that quality (see SKIPPED_QUALITIES).
 
 Rules (level, name):
 - error, numeral-double-accidental: a double flat or sharp in front of the Roman numeral (bbI for VII).
@@ -34,6 +35,9 @@ LEVELS = {
 }
 STEPS = "CDEFGAB"  # TiLiA's step numbers index this
 EXAMPLES = 5
+# TiLiA has no 7-flat-9 quality (TimeLineAnnotator/desktop#714), so the translator stores one as a diminished ninth
+# a major third below its root (C7b9/E as A#o9/E). Its root is wrong by construction; skipped until TiLiA has the quality.
+SKIPPED_QUALITIES = {"diminished-ninth"}
 TOLERANCE = 0.002  # seconds: sources round times to the millisecond
 
 
@@ -78,7 +82,8 @@ def _harmony(name, timeline, report):
             if abs(key.sharps) > 7:
                 report("key-signature", name, c["time"], f"{key} has {abs(key.sharps)} accidentals")
             continue
-        if c.get("kind") != "HARMONY" or key is None or c.get("display_mode") == "custom" or c.get("applied_to"):
+        if c.get("kind") != "HARMONY" or key is None or c.get("display_mode") == "custom" or c.get("applied_to") \
+                or c.get("quality") in SKIPPED_QUALITIES:
             continue
         accidental = numeral_accidental(c["step"], c["accidental"], scale)
         root = music21.pitch.Pitch(STEPS[c["step"]], accidental=c["accidental"]).name.replace("-", "b")
