@@ -5,6 +5,7 @@ Scripts that turn published music-analysis datasets into [TiLiA](https://github.
 | Folder | Dataset | Formerly |
 | --- | --- | --- |
 | `bpsd/` | Beethoven Piano Sonata Dataset v2 (32 first movements, 11 performances each) | `TimeLineAnnotator/bpsd-to-tilia` |
+| `choro/` | Choro Songbook Corpus v1.3.3 (295 pieces: chords, local keys, parts and phrases) | |
 | `dcml-mozart/` | DCML's Annotated Mozart Piano Sonatas (v2.3, 54 movements) | `TimeLineAnnotator/dcml-to-tilia` |
 | `dezrann-mozart/` | Dezrann's structure and texture of Mozart's sonatas K. 279, 280 and 283 (v1.0), added to the DCML files | |
 | `swd/` | Schubert Winterreise Dataset v2.1 | |
@@ -27,6 +28,7 @@ That commit is the `v0.7.0` tag. Do not write `@v0.7.0`: a branch of the same na
 ## Run a converter
 
 - `python bpsd/convert.py --out DIR [--only ID ...] [--package DIR] [--no-tilia] [--zip ZIP [--audio]]`: one TiLiA file per movement and performance (352), with the bar numbers of BPSD's printed scores and a zip package; see [`bpsd/README.md`](bpsd/README.md).
+- `python choro/convert.py --out DIR [--only ID ...] [--package DIR] [--no-tilia]`: one `.tla` per piece of the Choro Songbook Corpus, on the quarter-second time convention; see [`choro/README.md`](choro/README.md).
 - `python dcml-mozart/convert.py --out DIR [--only ID ...] [--package DIR] [--no-tilia]`: one `.tla` per movement of the DCML Mozart sonatas, on a quarter-second time convention (there is no recording); see [`dcml-mozart/README.md`](dcml-mozart/README.md).
 
 - `python dezrann-mozart/convert.py --dcml DIR --out DIR [--only ID ...] [--no-tilia]`: adds Dezrann's sonata-form structure and texture to the converted DCML files of nine movements; see [`dezrann-mozart/README.md`](dezrann-mozart/README.md).
