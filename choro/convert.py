@@ -36,6 +36,7 @@ LICENCE_ID = "CC-BY-NC-SA-4.0"
 LICENCE = "CC BY-NC-SA 4.0"
 CORPUS = "Choro Songbook Corpus (DCMLab/choro), v1.3.3, DOI 10.5281/zenodo.21219604"
 TIME_UNIT = "quarter notes (no recording: one second stands for one quarter note)"
+AUTHORS = "Fabian C. Moss, Willian Fernandes de Souza and Martin A. Rohrmeier"
 CITATION = (
     "Moss, F. C., Fernandes de Souza, W. and Rohrmeier, M. (2020) Harmony and form in Brazilian Choro: "
     "A corpus-driven approach to musical style analysis. Journal of New Music Research, 49(5), 416-437. "
@@ -419,6 +420,8 @@ def piece_metadata(piece: Piece) -> dict[str, str]:
     values = {"title": r["title"], "composer": r["composer"], "composition year": year, "genre": r["sub_genre"],
               "tonality": r["global_key"], "time signature": r["global_meter"],
               "source": f"Choro Songbook, vol. {r['songbook']}", "corpus": CORPUS, "licence": LICENCE,
+              # the fields TiLiA's web platform reads for an analysis's author and licence
+              "analysis author": AUTHORS, "analysis license": LICENCE,
               "time unit": TIME_UNIT, "notes": notes}
     return {k: v for k, v in values.items() if v}
 

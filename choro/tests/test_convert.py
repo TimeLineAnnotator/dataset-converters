@@ -104,7 +104,8 @@ def test_metadata(built):
     md = built["1_alvorada_WF"].metadata
     assert md["title"] == "Alvorada" and md["composer"] == "Jacob do Bandolim"
     assert md["composition year"] == "1955" and md["tonality"] == "Dm" and md["time signature"] == "2/4"
-    assert md["licence"] == "CC BY-NC-SA 4.0" and "10.1080/09298215.2020.1797109" in md["notes"]
+    assert md["licence"] == md["analysis license"] == "CC BY-NC-SA 4.0"
+    assert md["analysis author"].startswith("Fabian C. Moss") and "10.1080/09298215.2020.1797109" in md["notes"]
 
 
 def test_script_quotes_its_values(choro, built, tmp_path):
