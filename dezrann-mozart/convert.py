@@ -25,6 +25,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 
 from common.download import fetch  # noqa: E402
+from common.lint import lint  # noqa: E402
 from common.package import build_package  # noqa: E402
 from common.runner import run_script  # noqa: E402
 from format_converters.dez import read_dez, to_tilia_rows  # noqa: E402
@@ -188,6 +189,7 @@ def convert(pieces, dcml_dir, out, *, archive=None, run_tilia=True, jobs: int = 
         after = counted[piece]
         summary[piece]["dcml_unchanged"] = all(after.get(n) == c for n, c in before.items())
         summary[piece]["components"] = {typ: after[name] for typ, (name, _) in LAYERS.items()}
+        summary[piece]["lint"] = lint(out / "tla" / f"{piece}.tla")
     (out / "summary.json").write_text(json.dumps(summary, indent=1) + "\n")
     return summary
 

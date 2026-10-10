@@ -16,6 +16,7 @@ import zipfile
 from pathlib import Path
 
 from common.download import _cache_path, _md5, default_cache_dir, fetch_member
+from common.lint import lint
 from common.package import build_package
 from common.runner import ScriptError, run_script
 from format_converters.harmony import translate_chord, translate_key
@@ -167,6 +168,13 @@ def _translate(label, key):
     return translate_chord(label, "harte", key)
 
 
+def _bass_changes_the_chord(label, res) -> bool:
+    """Is the exact symbol that of a chord whose bass lies outside it? It then names another chord than the label:
+    B:dim7/C is Bob9/C, D:(3,5,b7,b9)/A# is A#+M11, and the symbol would hide what the annotators wrote."""
+    from format_converters import _harte
+    return res.outcome == "letter" and _harte.pitch_classes(label) != _harte.pitch_classes(label, bass_sounds=False)
+
+
 @functools.lru_cache(maxsize=None)
 def _key(label):
     return translate_key(label, "harte")
@@ -253,7 +261,10 @@ def build_tables(data):
         else:
             # letter symbols carry the spelling; shown as Roman numerals, like BPSD's and DCML's chords
             mode = "roman" if res.display_mode == "letter" else res.display_mode
-            harmony.append(["harmony", chord_start(r), res.symbol, mode, res.custom_text, res.comments])
+            text, comments = res.custom_text, res.comments
+            if _bass_changes_the_chord(label, res):
+                mode, text, comments = "custom", label, f"{label} has the notes of {res.symbol}"
+            harmony.append(["harmony", chord_start(r), res.symbol, mode, text, comments])
     # a key and a chord at the same time: the key first, so that the chord reads against it
     harmony.sort(key=lambda row: (float(row[1]), row[0] != "key"))
 
@@ -395,6 +406,7 @@ def convert_item(source, item, out, *, tilia=True, audio=False, titles=None, key
     run_script_retrying(script)
     counts, rows = count_tla(tla), source_rows(data)
     entry = {layer: {"components": counts[layer], "source_rows": rows[layer]} for layer in LAYERS}
+    entry["lint"] = lint(tla, [paths["harmony"]])
     moved = {f"Local keys (ann{n})": o for n, o in respelled(data)["offsets"].items() if o}
     if moved:
         entry["keys_moved_to_the_chords"] = moved  # semitones
