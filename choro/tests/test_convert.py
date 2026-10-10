@@ -44,12 +44,31 @@ def test_keys_before_their_chords(built):
 def test_parts_and_phrases(built):
     rows = built["1_alvorada_WF"].csvs["form.csv"][1]
     parts = [(r["start"], r["end"], r["label"]) for r in rows if r["level"] == 2]
-    assert parts == [("0.0", "4.0", "Intro"), ("4.0", "68.0", "A"), ("68.0", "134.0", "B")]
+    # S: $Intro $PartA $PartB $P0*14 $P1 $P2: the last three phrases are A's, played outside any part
+    assert parts == [("0.0", "4.0", "Intro"), ("4.0", "68.0", "A"), ("68.0", "134.0", "B"), ("134.0", "168.0", "A")]
+    assert [bool(r["comments"]) for r in rows if r["level"] == 2] == [False, False, False, True]
     phrases = [(r["start"], r["end"], r["label"]) for r in rows if r["level"] == 1]
     assert phrases[:5] == [("0.0", "4.0", "P0"), ("4.0", "8.0", "P0"), ("8.0", "30.0", "P1"),
                            ("30.0", "34.0", "P0"), ("34.0", "38.0", "P0")]  # bars 16-19: P0 twice
     assert phrases[-3:] == [("134.0", "138.0", "P0"), ("138.0", "160.0", "P1"), ("160.0", "168.0", "P2")]
     assert len(phrases) == 14
+
+
+@pytest.mark.parametrize("s, expected", [
+    ("$PartA $PartB $P1 $P2", ["A", "B", "A"]),  # the return of A, written as its phrases
+    ("$PartA $PartB $P3 $PartA", ["A", "B", "B", "A"]),  # a return of B between parts
+    ("$P0 $PartA $PartB $Fadeout", ["A", "B", "Fadeout"]),  # a vamp that only the fadeout plays is in no part
+    ("$PartA $P5 $PartB", ["A", "B"]),  # a transition in no rule is in no part
+    ("$PartA $PartB $P9 $P1", ["A", "B", "A"]),  # P9 is A's and B's: it takes its neighbour's part
+    ("$PartA $PartB $P9", ["A", "B"]),  # ... and no part when no neighbour has it
+])
+def test_returns_to_a_part(choro, s, expected):
+    transcription = f"PartA: $P1 $P2 $P9\nPartB: $P3 $P4 $P9\nFadeout: $P0 $P0\nS[C, 2/4]: {s}\n"
+    rows = [{"part": part, "phrase": phrase, "bar_no": str(bar), "duration": "0.5"}
+            for bar, (_, part, phrase) in enumerate(choro.grammar(transcription), 1)]  # one bar per phrase
+    piece = choro.Piece("test", rows, transcription)
+    parts, _, _ = choro.form_units(piece, choro.chord_times(rows))
+    assert [u.label for u in parts] == expected
 
 
 def test_the_rules_must_match_the_table(choro, pieces):

@@ -384,12 +384,55 @@ def form_units(piece: Piece, times: list[Fraction]) -> tuple[list[Unit], list[Un
             instances.append((token[0], part, phrase, times[members[0]], times[members[-1] + 1], comment))
 
     phrases = [Unit(s, e, ph, c) for _, _, ph, s, e, c in instances]
-    parts = []
-    for occ, group in itertools.groupby(instances, key=lambda x: x[0]):
-        group = list(group)
+    returns = returned_parts([(occ, part, phrase) for occ, part, phrase, *_ in instances])
+    keys = []  # which part unit each phrase belongs to: (part occurrence, part, inferred) or None
+    run = itertools.count()
+    for (occ, part, *_), returned in zip(instances, returns):
         if occ is not None:
-            parts.append(Unit(group[0][3], group[-1][4], part_label(group[0][1])))
+            keys.append((occ, part, False))
+        elif returned is None:
+            keys.append(None)
+            next(run)
+        else:
+            previous = keys[-1] if keys else None
+            same = previous is not None and previous[2] and previous[1] == returned
+            keys.append(previous if same else (f"return {next(run)}", returned, True))
+    parts = []
+    for key, group in itertools.groupby(zip(keys, instances), key=lambda x: x[0]):
+        if key is None:
+            continue
+        group = [inst for _, inst in group]
+        label = part_label(key[1])
+        comment = (f"The rules play these phrases outside any part; they are phrases of part {label}"
+                   if key[2] else "")
+        parts.append(Unit(group[0][3], group[-1][4], label, comment))
     return parts, phrases, problems
+
+
+def returned_parts(tokens: list[tuple[int | None, str, str]]) -> list[str | None]:
+    """For each phrase the rules play at the top level (S: ... $PartB $P1 $P2), the part (PartA, PartB, ...)
+    whose phrases it repeats, or None; None for the phrases inside parts. A phrase in one part's rule belongs
+    to that part. A phrase in several parts' rules belongs to its neighbour's part (the previous phrase's,
+    else the next's) when that part has it. Intros, codas and fadeouts are not looked at: a top-level phrase
+    that only they play (a vamp before A) stays outside any part, as do phrases in no rule (transitions)."""
+    owners: dict[str, set[str]] = {}
+    for occ, part, phrase in tokens:
+        if occ is not None and part.startswith("Part"):
+            owners.setdefault(phrase, set()).add(part)
+    out: list[str | None] = []
+    for occ, _, phrase in tokens:
+        mine = owners.get(phrase, set()) if occ is None else set()
+        out.append(next(iter(mine)) if len(mine) == 1 else None)
+    for i, (occ, _, phrase) in enumerate(tokens):
+        mine = owners.get(phrase, set()) if occ is None else set()
+        if len(mine) < 2:
+            continue
+        neighbours = []
+        for j in (i - 1, i + 1):
+            if 0 <= j < len(tokens) and tokens[j][0] is None:
+                neighbours.append(out[j])
+        out[i] = next((n for n in neighbours if n in mine), None)
+    return out
 
 
 def form_rows(parts: list[Unit], phrases: list[Unit]) -> list[dict]:

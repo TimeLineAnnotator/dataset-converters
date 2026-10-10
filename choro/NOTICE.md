@@ -27,9 +27,12 @@ Every file has four timelines, all present even when empty:
   converter's `source-report.json`) keeps round(numerator x actual length / nominal length) beats, at least
   one, and the chords keep their written durations.
 - **Form** (hierarchy, two levels): the parts (Intro, A, B, C, Coda, ...) above the phrases (P0, P1, ...).
-  Phrases that the transcription's rules play at the top level, outside any part (often the return of A
-  after B), have no part above them. A phrase that the rules play twice in a row is split into two units
-  of equal length.
+  The transcriptions often write a return to a part (the A after B) as its phrases, outside any part
+  (`S: $PartA $PartB $P1 $P2`), and the table gives those rows no part. Such a run of phrases is labelled
+  with the part (A, B, C, ...) whose rule has them, and its comment says so (385 parts). A phrase in
+  several parts' rules takes its neighbour's part. Phrases in no part's rule (transitions, and vamps that
+  only the intro or the fadeout plays) have no part above them (423 phrases). A phrase that the rules play
+  twice in a row is split into two units of equal length.
 - **Harmony** (harmony): the local keys and the chords, from the table's Harte labels. A chord is written
   as the letter symbol that TiLiA reads as exactly its notes, on its root and over its bass. Otherwise the
   transcribed label is shown as custom text and the stored chord is, in this order:
