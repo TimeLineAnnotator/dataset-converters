@@ -198,21 +198,41 @@ def measure_rows(rows: list[dict[str, str]], numbers: tuple[int, ...], pickup: b
 
 
 # ---------------------------------------------------------------- structure, keys, chords
-def structure_rows(fine: list[dict[str, str]], coarse: list[dict[str, str]]) -> list[dict]:
+# fine sections that BPSD starts before the section before them ends: (piece, label, occurrence) -> comment.
+# Each starts where the section before it ends.
+LATE_STARTS = {
+    # the repeated exposition: bar 45 beat 3 in both, as BPSD has the first exposition (groupmm/BPSD_scripts#1)
+    ("Op031No3-01", "Exposition:SecondGroup", 2): (
+        "BPSD starts this section on the downbeat of bar 45, before the Transition ends on beat 3; it starts where "
+        "the Transition ends, as in the first exposition"
+    ),
+}
+
+
+def structure_rows(fine: list[dict[str, str]], coarse: list[dict[str, str]], piece: str = "") -> list[dict]:
     """Level 2 = the coarse sections, level 1 = the fine ones (the part of the label after ':').
 
-    BPSD repeats some rows verbatim; TiLiA keeps one.
+    BPSD repeats some rows verbatim; TiLiA keeps one. A section in LATE_STARTS starts where the one before it ends.
     """
     out = []
     for level, rows in ((2, coarse), (1, fine)):
         seen = set()
+        occurrences: dict[str, int] = {}
+        previous = None
         for r in rows:
             key = (r["start"], r["end"], r["structure"])
             if key in seen:
                 continue
             seen.add(key)
+            start, comment = r["start"], ""
+            occurrences[r["structure"]] = n = occurrences.get(r["structure"], 0) + 1
+            if level == 1 and (piece, r["structure"], n) in LATE_STARTS:
+                if previous is None or float(start) >= float(previous["end"]):
+                    raise ValueError(f"{piece}: {r['structure']} ({n}) no longer starts before the section before it ends")
+                start, comment = previous["end"], LATE_STARTS[piece, r["structure"], n]
+            previous = r
             label = r["structure"].split(":", 1)[-1].strip() if level == 1 else r["structure"]
-            out.append({"start": r["start"], "end": r["end"], "level": level, "label": label, "comments": ""})
+            out.append({"start": start, "end": r["end"], "level": level, "label": label, "comments": comment})
     out.sort(key=lambda r: (float(r["start"]), -r["level"], float(r["end"])))
     return out
 
@@ -318,7 +338,8 @@ def prepare_item(item: str, source, out: Path, *, audio_source=None, names=None)
     localkeys = annotation(source, "localkey", item)
     chords = annotation(source, "chord", item)
     harmony, unparsed = harmony_rows(localkeys, chords)
-    structure = structure_rows(annotation(source, "structureFine", item), annotation(source, "structureCoarse", item))
+    structure = structure_rows(annotation(source, "structureFine", item), annotation(source, "structureCoarse", item),
+                               piece)
     beat_rows = measure_rows(measures, numbers, pickup)
 
     folder = out / "csv" / item
