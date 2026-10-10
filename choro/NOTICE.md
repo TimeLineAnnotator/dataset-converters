@@ -36,8 +36,8 @@ Every file has four timelines, all present even when empty:
 - **Harmony** (harmony): the local keys and the chords, from the table's Harte labels. A chord is written
   as the letter symbol that TiLiA reads as exactly its notes, on its root and over its bass. Otherwise the
   transcribed label is shown as custom text and the stored chord is, in this order:
-  - the same notes under the seventh chord's name, for a triad over its minor seventh (`D/C` is stored as
-    D7/C);
+  - the same notes under another chord's name, when the bass is not in the chord and the symbol takes it
+    in (`D/C` is stored as D7/C);
   - the chord without its added tones in brackets (`G7(13)` as G7, `D7(b9)` as D7);
   - the chord without its bass, or without both;
   - the shared translator's own approximation on the same root.

@@ -251,6 +251,10 @@ def without_bass(harte: str) -> str:
     return f"{root}:{rest.rpartition('/')[0]}" if "/" in rest else harte
 
 
+def same_quality(chord, without_its_bass) -> bool:
+    return without_its_bass is not None and chord.params["quality"] == without_its_bass.params["quality"]
+
+
 @functools.lru_cache(maxsize=None)
 def translate(label: str, harte: str, key: str) -> Placed:
     """A chord of the table (its label as transcribed, its Harte label) under a TiLiA key.
@@ -273,7 +277,8 @@ def translate(label: str, harte: str, key: str) -> Placed:
 
     first = translate_chord(written, "harte", key)
     if first.outcome == "letter" and stored_root(first.params) == root:
-        if written != harte:
+        if "/" in shorthand and not same_quality(first, exact(without_bass(harte))):
+            # the bass is not in the chord and the symbol names it (D/C as D7/C, Bb/A as Bbmaj7/A)
             return Placed(first.symbol, "custom", label, f"{label} has the notes of {first.symbol}")
         return Placed(first.symbol, first.display_mode)
 
