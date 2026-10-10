@@ -72,11 +72,26 @@ def test_harte_chords_are_written_as_format_converters_report_them(written):
     rows = written[SONG1]["harmony"]
     c = next(r for r in rows if r["symbol"] == "Cm/G")  # C:min/G
     assert (c["display_mode"], c["custom_text"], c["comments"]) == ("roman", "", "")
-    # B:dim7/C: TiLiA stores only Fdim/C, so it shows the label as custom text and says why
-    approx = next(r for r in rows if r["custom_text"] == "B:dim7/C")
-    assert approx["symbol"] == "Fdim/C"
+    # B:dim7/C: the bass sounds with the chord, stored exactly as Bob9/C, another chord: the label shows
+    pedal = [r for r in rows if r["symbol"] == "Bob9/C"]
+    assert pedal and all((r["display_mode"], r["custom_text"], r["comments"])
+                         == ("custom", "B:dim7/C", "B:dim7/C has the notes of Bob9/C") for r in pedal)
+    # A:dim/Bb: TiLiA stores no chord with that bass, so it shows the label as custom text and says why
+    approx = next(r for r in written[SONG2]["harmony"] if r["custom_text"] == "A:dim/Bb")
+    assert approx["symbol"] == "Adim"
     assert approx["display_mode"] == "custom"
-    assert "Fdim/C" in approx["comments"]
+    assert "the bass left out" in approx["comments"]
+
+
+@pytest.mark.parametrize("label, changed", [
+    ("B:dim7/C", True),  # Bob9/C
+    ("D:(3,5,b7,b9)/A#", True),  # A#+M11
+    ("D:maj/b7", True),  # D7/C
+    ("C:min/G", False),  # the bass is in the chord
+    ("C:maj/#4", False),  # no exact symbol
+])
+def test_a_bass_outside_the_chord_keeps_the_label(label, changed):
+    assert convert._bass_changes_the_chord(label, convert._translate(label, "C")) is changed
 
 
 def test_every_display_mode_is_filled_and_custom_has_text(written):
@@ -105,7 +120,7 @@ def test_n_and_x_rows_are_not_chords_and_do_not_move_the_key(data):
     d["chord"] = [*pads, *d["chord"]]
     d["score_chord"] = [*pads, *d["score_chord"]]
     harmony = convert.build_tables(d)["harmony"][1]
-    assert sum(r[0] == "harmony" for r in harmony) == 66 and harmony[0][1] == "0.3"
+    assert sum(r[0] == "harmony" for r in harmony) == 67 and harmony[0][1] == "0.3"
     assert convert.source_rows(d)["Harmony/chords"] == 69
 
 
@@ -202,7 +217,7 @@ def test_tla_chord_display(converted, tilia_keeps_harmony_display):
     out, _ = converted
     _, tl = read_tla(out / "tla" / f"{SONG2}.tla")
     custom = [c for c in components(tl["Harmony"]) if c["kind"] == "HARMONY" and c["display_mode"] == "custom"]
-    assert {c["custom_text"] for c in custom} == {"G:(3,5,b7,b9)/B", "G:(3,b5,b7,b9)/Db"}  # spelled from the score
+    assert {c["custom_text"] for c in custom} == {"A:dim/Bb", "G:(3,5,b7,b9)/B", "G:(3,b5,b7,b9)/Db"}  # spelled from the score
     assert all(c["comments"] for c in custom)
 
 

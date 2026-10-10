@@ -17,7 +17,8 @@ Each file has these timelines:
 Chords and keys are spelled from SWD's score annotations: the performance annotations name every note with sharps,
 and their chords are the score's, transposed (`spelling.py`; see [`NOTICE.md`](NOTICE.md)). Harte labels are
 translated by [format-converters](https://github.com/TimeLineAnnotator/format-converters). Labels that
-TiLiA can only approximate keep the source label as custom text, with a comment. None is dropped silently. The
+TiLiA can only approximate, and those whose bass lies outside the chord, keep the source label as custom text,
+with a comment. None is dropped silently. The
 `N` and `X` labels are not chords and are not placed.
 
 ## Run
