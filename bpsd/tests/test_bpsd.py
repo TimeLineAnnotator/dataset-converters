@@ -435,7 +435,7 @@ def test_read_table_waits_for_a_file_held_for_a_moment(tmp_path, monkeypatch):
 
 
 def test_tla_roles(converted):
-    out, _ = converted
+    out = converted
     tl = timelines(out / "tla" / f"{FIXTURES[0]}.tla")
     assert {n: t["metadata"]["role"] for n, t in tl.items() if "metadata" in t} == {
         "Measures": "time_map", "Structure": "form", "Harmony": "harmony"}
