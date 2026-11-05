@@ -26,7 +26,7 @@ sys.path.insert(0, str(HERE.parent))
 
 from common.download import fetch  # noqa: E402
 from common.package import build_package  # noqa: E402
-from common.runner import ScriptError, run_script  # noqa: E402
+from common.runner import run_script  # noqa: E402
 
 ZIP_URL = "https://zenodo.org/records/21219604/files/DCMLab/choro-v1.3.3.zip?download=1"
 ZIP_MD5 = "0f8a0dadb52577fd3c51ef82daf31bdb"
@@ -558,17 +558,6 @@ def count_tla(path) -> dict[str, int]:
     }
 
 
-def run_script_retrying(script, pid, attempts=3):
-    """Run a script through TiLiA; a run that stops before its first command (TiLiA failing to start, seen
-    once in 300 runs) is repeated from scratch."""
-    for attempt in range(attempts):
-        try:
-            return run_script(script, check=True)
-        except ScriptError as e:
-            if attempt == attempts - 1:
-                raise RuntimeError(f"{pid}: TiLiA failed {attempts} times") from e
-
-
 def convert(ids, out: Path, *, pieces=None, run_tilia=True, jobs: int = 4) -> dict:
     """Write CSVs, scripts and (with ``run_tilia``) .tla files for ``ids``; returns the summary.
 
@@ -590,7 +579,7 @@ def convert(ids, out: Path, *, pieces=None, run_tilia=True, jobs: int = 4) -> di
         return {}
 
     def run(pid):
-        run_script_retrying(scripts[pid], pid)
+        run_script(scripts[pid], check=True)
         counted = count_tla((out / "tla" / f"{pid}.tla").resolve())
         print(f"{pid}: {counted}", flush=True)
         return pid, counted

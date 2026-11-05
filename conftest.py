@@ -25,7 +25,7 @@ DCML_FILES = {
 }
 
 
-NETWORK_FIXTURES = {"files", "root", "source"}  # fixtures that download
+NETWORK_FIXTURES = {"files", "pieces", "root", "source"}  # fixtures that download
 
 
 def pytest_collection_modifyitems(items):
