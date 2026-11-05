@@ -44,13 +44,19 @@ def test_counts_equal_dez_labels(dez, root, piece):
 
 
 def test_script_commands(dez, tmp_path):
-    lines = dez.write_script(tmp_path / "a.tla", tmp_path / "b.tla", tmp_path / "s.csv", tmp_path / "t.csv").splitlines()
-    assert lines[0] == f"open {tmp_path / 'a.tla'}"
-    assert lines[1] == 'timelines add hierarchy --name "Structure (Dezrann)"'
-    assert lines[2] == 'timelines add hierarchy --name "Texture (Dezrann)"'
-    assert lines[3].startswith('timelines import hierarchy by-time --target-name "Structure (Dezrann)" --file ')
-    assert lines[4].startswith('timelines import hierarchy by-time --target-name "Texture (Dezrann)" --file ')
-    assert lines[5] == f"save {tmp_path / 'b.tla'} --overwrite"
+    source = tmp_path / "a.tla"
+    source.write_text(json.dumps({"media_metadata": {"licence": "CC BY-NC-SA 4.0", "notes": "From DCML."}}),
+                      encoding="utf-8")
+    lines = dez.write_script(source, tmp_path / "b.tla", tmp_path / "s.csv", tmp_path / "t.csv").splitlines()
+    assert lines[0] == f"open {source}"
+    assert lines[1].startswith('metadata set "licence" "CC BY-NC-SA 4.0 (DCML')
+    assert "ODbL 1.0 (Structure (Dezrann), Texture (Dezrann))" in lines[1]
+    assert lines[2].startswith('metadata set "notes" "From DCML. The timelines Structure (Dezrann) and Texture (Dezrann)')
+    assert lines[3] == 'timelines add hierarchy --name "Structure (Dezrann)"'
+    assert lines[4] == 'timelines add hierarchy --name "Texture (Dezrann)"'
+    assert lines[5].startswith('timelines import hierarchy by-time --target-name "Structure (Dezrann)" --file ')
+    assert lines[6].startswith('timelines import hierarchy by-time --target-name "Texture (Dezrann)" --file ')
+    assert lines[7] == f"save {tmp_path / 'b.tla'} --overwrite"
 
 
 def test_package_holds_only_dezrann_layers(dez, root, tmp_path):
