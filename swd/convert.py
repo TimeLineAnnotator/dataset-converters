@@ -61,8 +61,7 @@ ANNOTATORS = (1, 2, 3)
 ROLES = {
     "Measures": {"role": "time_map"},
     "Structure": {"role": "form"},
-    "Harmony": {"role": "harmony"},
-    **{f"Local keys (ann{n})": {"role": "keys"} for n in ANNOTATORS},
+    "Harmony": {"role": "harmony"},  # its key lane is what `IN keys` finds: annotator 1's, as the numerals read
 }
 KEY_ANNOTATOR = 1  # whose local keys are on the Harmony timeline, so that the Roman numerals read against them
 
