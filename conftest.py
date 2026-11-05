@@ -27,6 +27,18 @@ DCML_FILES = {
 }
 
 
+NETWORK_FIXTURES = {"bpsd_dataset", "dcml_dataset", "files"}  # fixtures that download
+
+
+def pytest_collection_modifyitems(items):
+    """Mark what needs TiLiA or the network, so that `pytest -m "not tilia and not network"` runs alone."""
+    for item in items:
+        if "tilia" in item.fixturenames:
+            item.add_marker("tilia")
+        if NETWORK_FIXTURES.intersection(item.fixturenames):
+            item.add_marker("network")
+
+
 @pytest.fixture(scope="session")
 def tilia():
     """Path of the TiLiA executable; tests that need it skip only when none is available."""
