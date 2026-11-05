@@ -17,6 +17,7 @@ import json
 import re
 import shutil
 import sys
+import time
 import zipfile
 from pathlib import Path
 
@@ -24,7 +25,7 @@ REPO = Path(__file__).resolve().parents[1]
 if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
-from common.download import default_cache_dir, fetch, fetch_member  # noqa: E402
+from common.download import default_cache_dir, fetch_member, fetch_resumable  # noqa: E402
 from common.package import build_package  # noqa: E402
 from common.runner import run_script  # noqa: E402
 
@@ -107,14 +108,20 @@ class ZipSource:
 
 
 def download_archive(cache_dir=None) -> Path:
-    """The whole archive, in the cache; ``fetch`` checks its md5."""
-    return fetch(ZIP_URL, ZIP_MD5, cache_dir=cache_dir)
+    """The whole archive, in the cache, with its md5 checked. 2 GB: a single stream kept timing out."""
+    return fetch_resumable(ZIP_URL, ZIP_MD5, cache_dir=cache_dir)
 
 
-def read_table(path) -> list[dict[str, str]]:
-    with open(path, encoding="utf-8", newline="") as f:
-        return [{(k or "").strip(): (v or "").strip().strip('"') for k, v in row.items()}
-                for row in csv.DictReader(f, delimiter=";")]
+def read_table(path, attempts: int = 5) -> list[dict[str, str]]:
+    for attempt in range(attempts):
+        try:
+            with open(path, encoding="utf-8", newline="") as f:
+                return [{(k or "").strip(): (v or "").strip().strip('"') for k, v in row.items()}
+                        for row in csv.DictReader(f, delimiter=";")]
+        except PermissionError:  # on Windows, a freshly unpacked file can be held for a moment
+            if attempt == attempts - 1:
+                raise
+            time.sleep(0.5 * (attempt + 1))
 
 
 def annotation(source, kind: str, item: str) -> list[dict[str, str]]:
