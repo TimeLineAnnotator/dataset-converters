@@ -49,3 +49,24 @@ jobs:
 
       - name: Run tests
         run: pytest -v
+
+  # What only fails on Windows: its default code page, no os.pwrite, TiLiA crashing as it starts.
+  # TiLiA's own install and the downloads stay in the job above.
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install this repository
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . pytest
+
+      - name: Run the tests that need neither TiLiA nor downloads
+        run: pytest -v -m "not tilia and not network"

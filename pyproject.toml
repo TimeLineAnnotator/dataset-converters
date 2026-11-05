@@ -23,3 +23,7 @@ packages = ["common"]
 pythonpath = ["."]
 testpaths = ["tests", "bpsd/tests", "dcml-mozart/tests"]
 addopts = "--import-mode=importlib"
+markers = [
+    "network: downloads from the datasets' servers",
+    "tilia: runs TiLiA's command line",
+]
