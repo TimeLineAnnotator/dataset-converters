@@ -1,7 +1,11 @@
 import json
+import os
+import stat
+import sys
 
 import pytest
 
+import common.runner
 from common.runner import ScriptError, run_script
 
 
@@ -64,3 +68,80 @@ def test_old_import_syntax_fails(csvs, tilia):
     assert any("stopped" in e and "timeline import csv" in e for e in result.errors)
     with pytest.raises(ScriptError):
         run_script(path, tilia=tilia)
+
+
+# ---------------------------------------------------------------- with a stand-in for TiLiA
+FAKE_TILIA = """
+import json, pathlib, sys
+here = pathlib.Path(sys.argv[0]).parent
+config = json.loads((here / "config.json").read_text())
+runs = int((here / "runs").read_text()) + 1 if (here / "runs").exists() else 1
+(here / "runs").write_text(str(runs))
+if runs <= config["crashes"]:
+    print("Traceback (most recent call last):", file=sys.stderr)
+    print("FileNotFoundError: [WinError 2] tilia/log.py", file=sys.stderr)
+    sys.exit(1)
+path = sys.stdin.read().removeprefix("script ").strip()
+if config.get("error"):
+    print("\\x1b[31m" + config["error"] + "\\x1b[39m")
+    sys.exit(0)
+for line in pathlib.Path(path).read_text(encoding="utf-8").splitlines():
+    if line.strip() and not line.startswith("#"):
+        print("\\x1b[32m" + line.strip() + "\\x1b[39m")
+"""
+
+
+@pytest.fixture
+def fake_tilia(tmp_path, monkeypatch):
+    """A TiLiA that crashes as it starts the first ``crashes`` times; returns (path, runs())."""
+    monkeypatch.setattr(common.runner.time, "sleep", lambda s: None)
+    (tmp_path / "fake.py").write_text(FAKE_TILIA)
+
+    def make(crashes=0, error=None):
+        (tmp_path / "config.json").write_text(json.dumps({"crashes": crashes, "error": error}))
+        if os.name == "nt":
+            path = tmp_path / "fake.cmd"
+            path.write_text(f'@"{sys.executable}" "{tmp_path / "fake.py"}" %*\n')
+        else:
+            path = tmp_path / "fake.sh"
+            path.write_text(f'#!/bin/sh\nexec "{sys.executable}" "{tmp_path / "fake.py"}" "$@"\n')
+            path.chmod(path.stat().st_mode | stat.S_IEXEC)
+        return str(path), lambda: int((tmp_path / "runs").read_text())
+
+    return make
+
+
+@pytest.fixture
+def one_command(tmp_path):
+    path = tmp_path / "s.txt"
+    path.write_text("metadata set-media-length 10\n")
+    return path
+
+
+def test_a_crash_at_startup_is_repeated(fake_tilia, one_command):
+    tilia, runs = fake_tilia(crashes=2)
+    result = run_script(one_command, tilia=tilia)
+    assert result.ok and result.commands == ["metadata set-media-length 10"] and runs() == 3
+
+
+def test_repeated_crashes_give_up_and_say_why(fake_tilia, one_command):
+    tilia, runs = fake_tilia(crashes=99)
+    with pytest.raises(ScriptError) as exc:
+        run_script(one_command, tilia=tilia, attempts=3)
+    assert runs() == 3 and exc.value.result.crashed
+    assert "before the first command" in str(exc.value) and "FileNotFoundError: [WinError 2]" in str(exc.value)
+
+
+def test_an_error_tilia_reports_is_not_repeated(fake_tilia, one_command):
+    tilia, runs = fake_tilia(error="no such timeline")
+    result = run_script(one_command, tilia=tilia, check=False)
+    assert not result.ok and not result.crashed and runs() == 1
+    assert "no such timeline" in result.errors
+
+
+def test_script_with_non_ascii_text_on_any_code_page(fake_tilia, tmp_path):
+    # read as cp1252, the "\\xc1" of "\u00c1" stops at byte 0x81
+    tilia, _ = fake_tilia()
+    path = tmp_path / "s.txt"
+    path.write_text("metadata set title \u00c1gua de Beber \u00cdndio\n", encoding="utf-8")
+    assert run_script(path, tilia=tilia).commands == ["metadata set title \u00c1gua de Beber \u00cdndio"]
