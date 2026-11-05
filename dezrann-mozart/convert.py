@@ -27,6 +27,7 @@ sys.path.insert(0, str(HERE.parent))
 from common.download import fetch  # noqa: E402
 from common.lint import lint  # noqa: E402
 from common.package import build_package  # noqa: E402
+from common.roles import set_roles  # noqa: E402
 from common.runner import run_script  # noqa: E402
 from format_converters.dez import read_dez, to_tilia_rows  # noqa: E402
 
@@ -44,6 +45,14 @@ LAYERS = {"Structure": ("Structure (Dezrann)", "structure"), "Texture": ("Textur
 LEFT_OUT = ("Harmony", "Cadence", "Local Key", "Phrase", "Positive Feedback", "Comment")
 BAR_FIELDS = ["start", "start_fraction", "end", "end_fraction", "level", "label", "comments"]
 TIME_FIELDS = ["start", "end", "level", "label", "comments"]
+# Roles of the new timelines (metadata "role"); DCML's timelines keep the roles of DCML's file
+ROLES = {LAYERS["Structure"][0]: {"role": "form"}}
+
+
+def file_roles(tla_path) -> dict[str, dict[str, str]]:
+    """The metadata of each named timeline of a TiLiA file that has some: TiLiA drops it when it saves."""
+    data = json.loads(Path(tla_path).read_text(encoding="utf-8"))
+    return {t["name"]: t["metadata"] for t in data["timelines"].values() if t.get("name") and t.get("metadata")}
 
 
 def fetch_archive(cache_dir=None) -> Path:
@@ -194,6 +203,7 @@ def convert(pieces, dcml_dir, out, *, archive=None, run_tilia=True, jobs: int = 
 
     def run(piece):
         run_script(scripts[piece], check=True)
+        set_roles(out / "tla" / f"{piece}.tla", {**file_roles(dcml_dir / "tla" / f"{piece}.tla"), **ROLES})
         return piece, count_tla(out / "tla" / f"{piece}.tla")
 
     with ThreadPoolExecutor(max_workers=max(1, jobs)) as pool:
