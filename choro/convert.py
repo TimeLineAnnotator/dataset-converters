@@ -541,7 +541,7 @@ def write_script(converted: Converted, csv_dir: Path, tla_path: Path) -> str:
 # --------------------------------------------------------------------------- counting the saved files
 def count_tla(path) -> dict[str, int]:
     """Components per layer in a saved .tla file."""
-    data = json.loads(Path(path).read_text())
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
     by_name = {t.get("name"): t for t in data["timelines"].values()}
 
     def comps(name):
@@ -588,10 +588,10 @@ def convert(ids, out: Path, *, pieces=None, run_tilia=True, jobs: int = 4) -> di
         counts = dict(pool.map(run, ids))
     summary = {pid: {layer: {"components": counts[pid][layer], "source_rows": converted[pid].source_rows[layer]}
                      for layer in LAYERS} for pid in ids}
-    (out / "summary.json").write_text(json.dumps(summary, indent=1) + "\n")
+    (out / "summary.json").write_text(json.dumps(summary, indent=1) + "\n", encoding="utf-8")
     report = {pid: {"irregular_bars": c.irregular_bars, "problems": c.problems}
               for pid, c in converted.items() if c.irregular_bars or c.problems}
-    (out / "source-report.json").write_text(json.dumps(report, indent=1, ensure_ascii=False) + "\n")
+    (out / "source-report.json").write_text(json.dumps(report, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     return summary
 
 
@@ -601,7 +601,7 @@ def package(out: Path, package_dir: Path) -> Path:
     with tempfile.TemporaryDirectory(dir=out) as tmp:
         files = []
         for tla in sorted((out / "tla").glob("*.tla")):
-            data = json.loads(tla.read_text())
+            data = json.loads(tla.read_text(encoding="utf-8"))
             data["file_path"] = ""
             data["media_path"] = ""
             target = Path(tmp) / tla.name
