@@ -16,14 +16,16 @@ The code is under the MIT licence. The datasets keep their own licences.
 
 ## Install
 
-The converters need Python 3.12 or newer. TiLiA itself needs Python 3.12 or older, so use 3.12 for everything. Install this repository and TiLiA 0.7.0:
+Use Python 3.12: the converters need 3.12 or newer, TiLiA 3.12 or older. They use TiLiA twice, in two environments. This repository's brings `format-converters` and, through it, the release of TiLiA whose parser it checks chords with. The converters run the other one's command line, which has `timelines add harmony` and `timelines import harmony`, and keeps the harmony CSV's display and comments:
 
 ```
 pip install -e .
-pip install "TiLiA @ git+https://github.com/TimeLineAnnotator/desktop@eb605f720847cf86f47834e71bc5bd9f8e0cd606"
+python -m venv .tilia-cli
+.tilia-cli/bin/pip install "TiLiA @ git+https://github.com/TimeLineAnnotator/desktop@eb4f29bccf3605cbd36caaedf097e726367d9122"
+export TILIA=$PWD/.tilia-cli/bin/tilia           # on Windows, .tilia-cli\Scripts\tilia.exe
 ```
 
-That commit is the `v0.7.0` tag. Do not write `@v0.7.0`: a branch of the same name shadows the tag, and pip would install 0.6.2.
+Older releases of TiLiA stop at `timelines add harmony` (`invalid choice: 'harmony'`).
 
 ## Run a converter
 
@@ -44,11 +46,14 @@ export QT_QPA_PLATFORM=offscreen                 # TiLiA runs without a display
 pytest
 ```
 
+`pytest -m "not tilia and not network"` runs what needs neither TiLiA nor downloads, as CI's Windows job does.
+
 The tests download small fixtures from the datasets into `DATASET_CONVERTERS_CACHE` (checked by md5; nothing is committed) and run TiLiA as a subprocess. Tests that need TiLiA skip only when `TILIA` is unset and no `tilia` is on `PATH`. CI (`.github/workflows/ci.yml`) runs the same on Python 3.12.
 
 ## Shared code (`common/`)
 
-- `common.runner.run_script(path, *, tilia=None, timeout=1800, check=True)`: runs a TiLiA script headless through `tilia -i cli` (`tilia` defaults to `$TILIA`, then `tilia` on `PATH`) and returns a `ScriptResult` (`ok`, `errors`, `commands`, `output`). TiLiA's CLI always exits with status 0, so success is read from its output: no error text and every command of the script echoed. With `check=True` a failure raises `ScriptError`, which carries the result. It stands in until TiLiA has a non-interactive `tilia run`.
+- `common.runner.run_script(path, *, tilia=None, timeout=1800, check=True, attempts=5)`: runs a TiLiA script headless through `tilia -i cli` (`tilia` defaults to `$TILIA`, then `tilia` on `PATH`) and returns a `ScriptResult` (`ok`, `errors`, `commands`, `output`). TiLiA's CLI always exits with status 0, so success is read from its output: no error text and every command of the script echoed. With `check=True` a failure raises `ScriptError`, which carries the result. It stands in until TiLiA has a non-interactive `tilia run`.
 - `common.download.fetch(url, md5, *, cache_dir=None)`: downloads into the cache, reuses a cached file with the right md5, and raises `ChecksumError` (deleting the download) on a mismatch.
+- `common.download.fetch_resumable(url, md5, *, cache_dir=None, attempts=10, connections=4)`: `fetch` for large files: parallel range requests, each retried on its own, and an interrupted download continues from the chunks it has.
 - `common.download.fetch_member(zip_url, member, md5, *, cache_dir=None)`: reads one member of a remote zip with HTTP range requests, so large archives are never downloaded whole, and verifies and caches it like `fetch`.
 - `common.package.build_package(name, files, licence, notes, *, out_dir)`: writes a reproducible `<name>.zip` with the files, a `LICENSE` (from an SPDX id such as `CC-BY-3.0`, `CC-BY-NC-SA-4.0`, `ODbL-1.0`, `MIT`) and a `NOTICE.md`; an unknown id raises `ValueError`.

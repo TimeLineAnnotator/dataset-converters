@@ -42,7 +42,7 @@ python swd/convert.py --out DIR [--only ID ...] [--package DIR] [--no-tilia] [--
 archive (md5 591c377c6d3db522fd159b8b70180978), converts all 216 items with the recordings, builds the package into
 `<out>/package` and prints the totals. `write_script` in `convert.py` is the one function that makes the script text.
 
-`download.py` continues an interrupted download of the archive; Zenodo stalls long transfers.
+`common.download.fetch_resumable` continues an interrupted download of the archive; Zenodo stalls long transfers.
 
 ## Tests
 
