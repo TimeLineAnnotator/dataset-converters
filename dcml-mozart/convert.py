@@ -41,7 +41,7 @@ CITATION = (
 # Timeline roles that TiLiA's current format reads (metadata "role"), written after TiLiA saves
 ROLES = {
     "Measures": {"role": "time_map"},
-    "Phrases": {"role": "form"},
+    "Phrases": {"role": "phrases"},  # DCML marks phrases only with { and }: no labels, and no form analysis
     "Harmony": {"role": "harmony"},
     "Cadences": {"role": "cadences"},
 }

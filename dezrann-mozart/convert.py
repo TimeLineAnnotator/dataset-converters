@@ -46,7 +46,7 @@ LEFT_OUT = ("Harmony", "Cadence", "Local Key", "Phrase", "Positive Feedback", "C
 BAR_FIELDS = ["start", "start_fraction", "end", "end_fraction", "level", "label", "comments"]
 TIME_FIELDS = ["start", "end", "level", "label", "comments"]
 # Roles of the new timelines (metadata "role"); DCML's timelines keep the roles of DCML's file
-ROLES = {LAYERS["Structure"][0]: {"role": "form"}}
+ROLES = {LAYERS["Structure"][0]: {"role": "form"}, LAYERS["Texture"][0]: {"role": "texture"}}
 
 
 def file_roles(tla_path) -> dict[str, dict[str, str]]:

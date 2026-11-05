@@ -78,3 +78,10 @@ def test_package(dcml, converted, tmp_path):
         if n.endswith(".tla"):
             d = json.loads(z.read(n))
             assert d["file_path"] == "" and d["media_path"] == ""
+
+
+def test_roles_in_the_saved_file(converted):
+    out, _ = converted
+    tl, _ = timelines(out / "tla" / "K331-1.tla")
+    assert {n: t["metadata"]["role"] for n, t in tl.items() if "metadata" in t} == {
+        "Measures": "time_map", "Phrases": "phrases", "Harmony": "harmony", "Cadences": "cadences"}
