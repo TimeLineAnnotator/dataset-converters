@@ -18,6 +18,7 @@ from pathlib import Path
 from common.download import _cache_path, _md5, default_cache_dir, fetch_member, fetch_resumable
 from common.lint import lint
 from common.package import build_package
+from common.roles import set_roles
 from common.runner import run_script
 from format_converters.harmony import translate_chord, translate_key
 from swd import spelling
@@ -56,6 +57,13 @@ LAYERS = ["Measures", "Structure", "Harmony/keys", "Harmony/chords",
           "Local keys (ann1)", "Local keys (ann2)", "Local keys (ann3)"]
 NO_CHORD = {"N", "X", ""}
 ANNOTATORS = (1, 2, 3)
+# Timeline roles that TiLiA's current format reads (metadata "role"), written after TiLiA saves
+ROLES = {
+    "Measures": {"role": "time_map"},
+    "Structure": {"role": "form"},
+    "Harmony": {"role": "harmony"},
+    **{f"Local keys (ann{n})": {"role": "keys"} for n in ANNOTATORS},
+}
 KEY_ANNOTATOR = 1  # whose local keys are on the Harmony timeline, so that the Roman numerals read against them
 
 CHORD_COLUMNS = ["harmony_or_key", "time", "symbol", "display_mode", "custom_text", "comments"]
@@ -393,6 +401,7 @@ def convert_item(source, item, out, *, tilia=True, audio=False, titles=None, key
     if not tilia:
         return None
     run_script(script, check=True)
+    set_roles(tla, ROLES)
     counts, rows = count_tla(tla), source_rows(data)
     entry = {layer: {"components": counts[layer], "source_rows": rows[layer]} for layer in LAYERS}
     entry["lint"] = lint(tla, [paths["harmony"]])
