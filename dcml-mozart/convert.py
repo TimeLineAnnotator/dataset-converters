@@ -37,8 +37,8 @@ CITATION = (
     "https://doi.org/10.5334/tismir.63"
 )
 
-MD5S = json.loads((HERE / "md5s.json").read_text())
-PIECES = [line.strip().removesuffix(".harmonies.tsv") for line in (HERE / "dcml_files.txt").read_text().split()]
+MD5S = json.loads((HERE / "md5s.json").read_text(encoding="utf-8"))
+PIECES = [line.strip().removesuffix(".harmonies.tsv") for line in (HERE / "dcml_files.txt").read_text(encoding="utf-8").split()]
 
 LAYERS = ("Measures", "Harmony/keys", "Harmony/chords", "Cadences", "Phrases")
 
@@ -278,7 +278,7 @@ def write_script(movement: Movement, csv_dir: Path, tla_path: Path) -> str:
 # --------------------------------------------------------------------------- counting the saved files
 def count_tla(path) -> dict[str, int]:
     """Components per layer in a saved .tla file."""
-    data = json.loads(Path(path).read_text())
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
     by_name = {t.get("name"): t for t in data["timelines"].values()}
 
     def comps(name):
@@ -329,7 +329,7 @@ def convert(pieces, out: Path, *, files=None, run_tilia=True, jobs: int = 4) -> 
                        for layer in LAYERS} for piece in pieces}
     for piece in pieces:
         summary[piece]["lint"] = lint(out / "tla" / f"{piece}.tla", [out / "csv" / piece / "harmony.csv"])
-    (out / "summary.json").write_text(json.dumps(summary, indent=1) + "\n")
+    (out / "summary.json").write_text(json.dumps(summary, indent=1) + "\n", encoding="utf-8")
     return summary
 
 
@@ -339,7 +339,7 @@ def package(out: Path, package_dir: Path) -> Path:
     with tempfile.TemporaryDirectory(dir=out) as tmp:
         files = []
         for tla in sorted((out / "tla").glob("*.tla")):
-            data = json.loads(tla.read_text())
+            data = json.loads(tla.read_text(encoding="utf-8"))
             data["file_path"] = ""
             data["media_path"] = ""
             target = Path(tmp) / tla.name
