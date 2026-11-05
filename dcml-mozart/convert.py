@@ -22,6 +22,7 @@ sys.path.insert(0, str(HERE.parent))
 from common.download import fetch  # noqa: E402
 from common.lint import lint  # noqa: E402
 from common.package import build_package  # noqa: E402
+from common.roles import set_roles  # noqa: E402
 from common.runner import run_script  # noqa: E402
 
 COMMIT = "5337257a5318711e6302cfe85c3f1a6ade3c6271"
@@ -36,6 +37,14 @@ CITATION = (
     "and cadence. Transactions of the International Society for Music Information Retrieval, 4(1), 67-80. "
     "https://doi.org/10.5334/tismir.63"
 )
+
+# Timeline roles that TiLiA's current format reads (metadata "role"), written after TiLiA saves
+ROLES = {
+    "Measures": {"role": "time_map"},
+    "Phrases": {"role": "form"},
+    "Harmony": {"role": "harmony"},
+    "Cadences": {"role": "cadences"},
+}
 
 MD5S = json.loads((HERE / "md5s.json").read_text(encoding="utf-8"))
 PIECES = [line.strip().removesuffix(".harmonies.tsv") for line in (HERE / "dcml_files.txt").read_text(encoding="utf-8").split()]
@@ -319,6 +328,7 @@ def convert(pieces, out: Path, *, files=None, run_tilia=True, jobs: int = 4) -> 
 
     def run(piece):
         run_script(scripts[piece], check=True)
+        set_roles((out / "tla" / f"{piece}.tla").resolve(), ROLES)
         counted = count_tla((out / "tla" / f"{piece}.tla").resolve())
         print(f"{piece}: {counted}", flush=True)
         return piece, counted
