@@ -76,7 +76,7 @@ class RemoteSource:
     """Members of the remote archive, one at a time (HTTP range requests, checked against checksums.json)."""
 
     def __init__(self, checksums: dict[str, str] | None = None, cache_dir=None):
-        self.checksums = checksums if checksums is not None else json.loads(CHECKSUMS.read_text())
+        self.checksums = checksums if checksums is not None else json.loads(CHECKSUMS.read_text(encoding="utf-8"))
         self.cache_dir = cache_dir
 
     def path(self, member: str) -> Path:
@@ -384,7 +384,7 @@ def prepare_item(item: str, source, out: Path, *, audio_source=None, names=None)
 
 
 def count_tla(path: Path) -> dict[str, int]:
-    data = json.loads(Path(path).read_text())
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
     timelines = {t["name"]: t for t in data["timelines"].values() if t.get("name")}
     comps = lambda t: list(t.get("components", {}).values())
     harmony = comps(timelines["Harmony"])
@@ -414,7 +414,7 @@ def convert(items: list[str], out, *, source=None, audio_source=None, run_tilia:
             summary[item] = {layer: {"components": None, "source_rows": n}
                              for layer, n in prepared["source_rows"].items()}
     if run_tilia:
-        (out / "summary.json").write_text(json.dumps(summary, indent=1) + "\n")
+        (out / "summary.json").write_text(json.dumps(summary, indent=1) + "\n", encoding="utf-8")
     return summary
 
 
@@ -431,7 +431,7 @@ def package(out, package_dir) -> Path:
     clean.mkdir(parents=True)
     files = []
     for tla in sorted((out / "tla").glob("*.tla")):
-        data = json.loads(tla.read_text())
+        data = json.loads(tla.read_text(encoding="utf-8"))
         data["file_path"] = ""
         data["media_path"] = ""
         target = clean / tla.name
@@ -461,7 +461,7 @@ def write_checksums(zip_path) -> None:
     with zipfile.ZipFile(zip_path) as z:
         for member in checksum_members():
             sums[member] = hashlib.md5(z.read(ROOT + member)).hexdigest()
-    CHECKSUMS.write_text(json.dumps(sums, indent=0, sort_keys=True) + "\n")
+    CHECKSUMS.write_text(json.dumps(sums, indent=0, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def main(argv=None) -> int:

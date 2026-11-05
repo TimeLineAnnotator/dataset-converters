@@ -108,7 +108,7 @@ def check_bar_numbers(piece: str, root, dcml_tla) -> dict:
     """Compare Dezrann's measure map with DCML's Measures timeline: bar numbers (pickups and voltas
     included) and bar start times, in quarter notes. Returns what was found."""
     measure_map = json.loads((Path(root) / "measure-map" / f"{piece}.mm.json").read_text(encoding="utf-8"))
-    data = json.loads(Path(dcml_tla).read_text())
+    data = json.loads(Path(dcml_tla).read_text(encoding="utf-8"))
     tl = next(t for t in data["timelines"].values() if t.get("name") == "Measures")
     times = sorted(c["time"] for c in tl["components"].values())
     starts, i = [], 0
@@ -132,7 +132,7 @@ def _q(value: str) -> str:
 
 def merged_metadata(source_tla: Path) -> dict[str, str]:
     """The metadata fields a merged file changes: it holds two licences, and these files never ship."""
-    source = json.loads(Path(source_tla).read_text())["media_metadata"]
+    source = json.loads(Path(source_tla).read_text(encoding="utf-8"))["media_metadata"]
     names = " and ".join(name for name, _ in LAYERS.values())
     return {
         "licence": f"{source['licence']} (DCML's timelines); ODbL 1.0 ({LAYERS['Structure'][0]}, {LAYERS['Texture'][0]})",
@@ -162,7 +162,7 @@ def _components(by_name, name):
 
 def count_tla(path) -> dict[str, int]:
     """Components per timeline of a saved .tla file."""
-    data = json.loads(Path(path).read_text())
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
     by_name = {t["name"]: t for t in data["timelines"].values() if t.get("name")}
     return {name: len(_components(by_name, name)) for name in by_name}
 
@@ -214,7 +214,7 @@ def convert(pieces, dcml_dir, out, *, archive=None, run_tilia=True, jobs: int = 
         summary[piece]["dcml_unchanged"] = all(after.get(n) == c for n, c in before.items())
         summary[piece]["components"] = {typ: after[name] for typ, (name, _) in LAYERS.items()}
         summary[piece]["lint"] = lint(out / "tla" / f"{piece}.tla")
-    (out / "summary.json").write_text(json.dumps(summary, indent=1) + "\n")
+    (out / "summary.json").write_text(json.dumps(summary, indent=1) + "\n", encoding="utf-8")
     return summary
 
 

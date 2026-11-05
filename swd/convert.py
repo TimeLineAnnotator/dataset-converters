@@ -27,7 +27,7 @@ ARCHIVE_URL = "https://zenodo.org/records/10839767/files/Schubert_Winterreise_Da
 ARCHIVE_MD5 = "591c377c6d3db522fd159b8b70180978"
 HERE = Path(__file__).resolve().parent
 # md5 of every archive member the converter reads, so that single members can be downloaded and checked
-MEMBER_MD5 = json.loads((HERE / "members.json").read_text())
+MEMBER_MD5 = json.loads((HERE / "members.json").read_text(encoding="utf-8"))
 
 PERFORMERS = {
     "AL98": "AL98",
@@ -355,7 +355,7 @@ def write_script(data, paths, tla, recording=None):
 # ------------------------------------------------------------------ reading the saved files
 def count_tla(path):
     """Components per layer, counted in the saved .tla file."""
-    timelines = {t["name"]: t for t in json.loads(Path(path).read_text())["timelines"].values() if "name" in t}
+    timelines = {t["name"]: t for t in json.loads(Path(path).read_text(encoding="utf-8"))["timelines"].values() if "name" in t}
 
     def comps(name):
         c = timelines[name].get("components", {})
@@ -396,7 +396,7 @@ def convert_item(source, item, out, *, tilia=True, audio=False, titles=None, key
     if audio and data["performer"] in HAS_RECORDING:
         recording = source.extract(f"01_RawData/audio_wav/{item}.wav").resolve()
     script = out / "scripts" / f"{item}.txt"
-    script.write_text(write_script(data, {k: v.resolve() for k, v in paths.items()}, tla, recording))
+    script.write_text(write_script(data, {k: v.resolve() for k, v in paths.items()}, tla, recording), encoding="utf-8")
     if not tilia:
         return None
     run_script(script, check=True)
@@ -421,7 +421,7 @@ def convert_all(source, out, ids, *, tilia=True, audio=False, log=print):
             summary[item] = entry
         log(f"[{i}/{len(ids)}] {item}")
     if tilia:
-        (out / "summary.json").write_text(json.dumps(summary, indent=1))
+        (out / "summary.json").write_text(json.dumps(summary, indent=1), encoding="utf-8")
     return summary
 
 
@@ -433,11 +433,11 @@ def package(out, package_dir):
     staging.mkdir(parents=True)
     files = []
     for tla in sorted((out / "tla").glob("*.tla")):
-        data = json.loads(tla.read_text())
+        data = json.loads(tla.read_text(encoding="utf-8"))
         data["file_path"] = ""
         data["media_path"] = ""
         copy = staging / tla.name
-        copy.write_text(json.dumps(data))
+        copy.write_text(json.dumps(data), encoding="utf-8")
         files.append(copy)
     zip_path = build_package(PACKAGE_NAME, files, LICENCE, (HERE / "NOTICE.md").read_text(encoding="utf-8"), out_dir=package_dir)
     shutil.rmtree(staging)
