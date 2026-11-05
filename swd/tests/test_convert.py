@@ -247,3 +247,10 @@ def test_package_has_no_paths_and_carries_licence_and_notice(converted, tmp_path
         d = json.loads(z.read(n))
         assert d["file_path"] == "" and d["media_path"] == ""
     assert convert.package(out, tmp_path).read_bytes() == path.read_bytes()
+
+
+def test_tla_roles(converted):
+    out, _ = converted
+    _, tl = read_tla(out / "tla" / f"{SONG2}.tla")
+    assert {n: t["metadata"]["role"] for n, t in tl.items() if "metadata" in t} == {
+        "Measures": "time_map", "Structure": "form", "Harmony": "harmony"}
