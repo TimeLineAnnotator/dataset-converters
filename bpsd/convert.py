@@ -28,8 +28,15 @@ if str(REPO) not in sys.path:
 from common.download import default_cache_dir, fetch_member, fetch_resumable  # noqa: E402
 from common.lint import lint  # noqa: E402
 from common.package import build_package  # noqa: E402
+from common.roles import set_roles  # noqa: E402
 from common.runner import run_script  # noqa: E402
 
+# Timeline roles that TiLiA's current format reads (metadata "role"), written after TiLiA saves
+ROLES = {
+    "Measures": {"role": "time_map"},
+    "Structure": {"role": "form"},
+    "Harmony": {"role": "harmony"},
+}
 ZIP_URL = "https://zenodo.org/records/12783403/files/Beethoven_Piano_Sonata_Dataset_v2.zip?download=1"
 ZIP_MD5 = "17f73a2d608fd6e6da65d3bd9dda1923"
 ROOT = "Beethoven_Piano_Sonata_Dataset_v2/"
@@ -398,6 +405,7 @@ def convert(items: list[str], out, *, source=None, audio_source=None, run_tilia:
         prepared = prepare_item(item, source, out, audio_source=audio_source, names=names)
         if run_tilia:
             run_script(prepared["script"], tilia=tilia, check=True)
+            set_roles(prepared["tla"], ROLES)
             found = count_tla(prepared["tla"])
             summary[item] = {layer: {"components": found[layer], "source_rows": n}
                              for layer, n in prepared["source_rows"].items()}
