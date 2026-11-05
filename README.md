@@ -13,14 +13,16 @@ The code is under the MIT licence. The datasets keep their own licences.
 
 ## Install
 
-The converters need Python 3.12 or newer. TiLiA itself needs Python 3.12 or older, so use 3.12 for everything. Install this repository and TiLiA 0.7.0:
+Use Python 3.12: the converters need 3.12 or newer, TiLiA 3.12 or older. They use TiLiA twice, in two environments. This repository's brings `format-converters` and, through it, the release of TiLiA whose parser it checks chords with. The converters run the other one's command line, which has `timelines add harmony` and `timelines import harmony`, and keeps the harmony CSV's display and comments:
 
 ```
 pip install -e .
-pip install "TiLiA @ git+https://github.com/TimeLineAnnotator/desktop@eb605f720847cf86f47834e71bc5bd9f8e0cd606"
+python -m venv .tilia-cli
+.tilia-cli/bin/pip install "TiLiA @ git+https://github.com/TimeLineAnnotator/desktop@eb4f29bccf3605cbd36caaedf097e726367d9122"
+export TILIA=$PWD/.tilia-cli/bin/tilia           # on Windows, .tilia-cli\Scripts\tilia.exe
 ```
 
-That commit is the `v0.7.0` tag. Do not write `@v0.7.0`: a branch of the same name shadows the tag, and pip would install 0.6.2.
+Older releases of TiLiA stop at `timelines add harmony` (`invalid choice: 'harmony'`).
 
 ## Run a converter
 
