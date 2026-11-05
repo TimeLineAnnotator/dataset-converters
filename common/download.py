@@ -142,7 +142,7 @@ def fetch_resumable(url: str, md5: str, *, cache_dir=None, attempts: int = 10, c
     done_file = target.with_name(target.name + ".done")
     size = _size(url)
     count = -(-size // CHUNK)
-    done = set(json.loads(done_file.read_text())) if part.exists() and done_file.exists() else set()
+    done = set(json.loads(done_file.read_text(encoding="utf-8"))) if part.exists() and done_file.exists() else set()
     with open(part, "ab") as f:
         f.truncate(size)
     lock = threading.Lock()
@@ -157,7 +157,7 @@ def fetch_resumable(url: str, md5: str, *, cache_dir=None, attempts: int = 10, c
                 f.write(data)
                 f.flush()  # before the chunk counts as done
                 done.add(i)
-                done_file.write_text(json.dumps(sorted(done)))
+                done_file.write_text(json.dumps(sorted(done)), encoding="utf-8")
 
         with ThreadPoolExecutor(connections) as pool:
             list(pool.map(work, [i for i in range(count) if i not in done]))
