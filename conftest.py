@@ -1,5 +1,4 @@
 """Shared fixtures. Dataset files are downloaded into the cache, never stored in the repository."""
-import json
 import os
 import shutil
 
@@ -26,6 +25,18 @@ DCML_FILES = {
 }
 
 
+NETWORK_FIXTURES = {"files", "root", "source"}  # fixtures that download
+
+
+def pytest_collection_modifyitems(items):
+    """Mark what needs TiLiA or the network, so that `pytest -m "not tilia and not network"` runs alone."""
+    for item in items:
+        if "tilia" in item.fixturenames:
+            item.add_marker("tilia")
+        if NETWORK_FIXTURES.intersection(item.fixturenames):
+            item.add_marker("network")
+
+
 @pytest.fixture(scope="session")
 def tilia():
     """Path of the TiLiA executable; tests that need it skip only when none is available."""
@@ -34,21 +45,3 @@ def tilia():
         pytest.skip("TILIA is unset and no 'tilia' is on PATH")
     return path
 
-
-@pytest.fixture(scope="session")
-def tilia_keeps_harmony_display(tilia, tmp_path_factory):
-    """Whether this TiLiA's harmony CSV import keeps display_mode and custom_text.
-
-    Releases up to 0.7.0 parse those columns and drop them; TimeLineAnnotator/desktop#631 fixes that.
-    """
-    from common.runner import run_script
-
-    d = tmp_path_factory.mktemp("display-probe")
-    (d / "h.csv").write_text("harmony_or_key,time,symbol,display_mode,custom_text\nharmony,0,C,custom,probe\n")
-    (d / "s.txt").write_text(
-        "metadata set-media-length 4\ntimelines add harmony --name H\n"
-        f"timelines import harmony by-time --target-name H --file {d / 'h.csv'}\nsave {d / 'p.tla'} --overwrite\n")
-    run_script(d / "s.txt", tilia=tilia)
-    data = json.loads((d / "p.tla").read_text())
-    return any(c.get("custom_text") == "probe" for t in data["timelines"].values() if t.get("name") == "H"
-               for c in t["components"].values())

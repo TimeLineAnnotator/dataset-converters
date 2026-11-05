@@ -49,9 +49,7 @@ def test_bar_numbers_and_metadata_in_the_saved_file(converted, tables):
         assert data["media_path"] == ""
 
 
-def test_chord_display_in_the_saved_file(converted, tilia_keeps_harmony_display):
-    if not tilia_keeps_harmony_display:
-        pytest.skip("this TiLiA drops the harmony CSV's display_mode and custom_text (TimeLineAnnotator/desktop#631)")
+def test_chord_display_in_the_saved_file(converted):
     out, _ = converted
     tl, _ = timelines(out / "tla" / "K331-1.tla")
     chords = [c for c in tl["Harmony"]["components"].values() if "quality" in c]
