@@ -36,11 +36,11 @@ jobs:
             ffmpeg libavcodec-dev libavformat-dev libswscale-dev
 
       # The converters need `timelines add harmony` and `timelines import harmony`, which are in
-      # TimeLineAnnotator/desktop#575 and #632 but in no release yet: pinned to #632's head until they are.
+      # TiLiA's dev branch (desktop#575 and #632) but in no release yet: pinned to that commit until they are.
       - name: Install TiLiA's command line
         run: |
           python -m venv .tilia-cli
-          .tilia-cli/bin/pip install "TiLiA @ git+https://github.com/TimeLineAnnotator/desktop@eb4f29bccf3605cbd36caaedf097e726367d9122"
+          .tilia-cli/bin/pip install "TiLiA @ git+https://github.com/TimeLineAnnotator/desktop@406f5e6aca7b372e09d58200d9c62d1df17829cf"
 
       # This repository, with format-converters (pinned) and, through it, TiLiA 0.7.0's parser as a library
       - name: Install this repository

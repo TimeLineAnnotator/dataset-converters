@@ -21,7 +21,7 @@ Use Python 3.12: the converters need 3.12 or newer, TiLiA 3.12 or older. They us
 ```
 pip install -e .
 python -m venv .tilia-cli
-.tilia-cli/bin/pip install "TiLiA @ git+https://github.com/TimeLineAnnotator/desktop@eb4f29bccf3605cbd36caaedf097e726367d9122"
+.tilia-cli/bin/pip install "TiLiA @ git+https://github.com/TimeLineAnnotator/desktop@406f5e6aca7b372e09d58200d9c62d1df17829cf"
 export TILIA=$PWD/.tilia-cli/bin/tilia           # on Windows, .tilia-cli\Scripts\tilia.exe
 ```
 
