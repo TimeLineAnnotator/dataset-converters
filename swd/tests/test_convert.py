@@ -179,9 +179,7 @@ def test_tla_chords_as_reported(converted):
     assert {c["kind"] for c in keys} == {"MODE"} and len(keys) == 12
 
 
-def test_tla_chord_display(converted, tilia_keeps_harmony_display):
-    if not tilia_keeps_harmony_display:
-        pytest.skip("this TiLiA drops the harmony CSV's display_mode and custom_text (TimeLineAnnotator/desktop#631)")
+def test_tla_chord_display(converted):
     out, _ = converted
     _, tl = read_tla(out / "tla" / f"{SONG2}.tla")
     custom = [c for c in components(tl["Harmony"]) if c["kind"] == "HARMONY" and c["display_mode"] == "custom"]
