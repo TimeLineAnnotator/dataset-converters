@@ -15,13 +15,12 @@ import wave
 import zipfile
 from pathlib import Path
 
-from common.download import _cache_path, _md5, default_cache_dir, fetch_member
+from common.download import _cache_path, _md5, default_cache_dir, fetch_member, fetch_resumable
 from common.lint import lint
 from common.package import build_package
-from common.runner import ScriptError, run_script
+from common.runner import run_script
 from format_converters.harmony import translate_chord, translate_key
 from swd import spelling
-from swd.download import fetch_resumable
 
 ARCHIVE_URL = "https://zenodo.org/records/10839767/files/Schubert_Winterreise_Dataset_v2-1.zip?download=1"
 ARCHIVE_MD5 = "591c377c6d3db522fd159b8b70180978"
@@ -378,16 +377,6 @@ def source_rows(data):
 
 
 # ------------------------------------------------------------------ the run
-def run_script_retrying(script, attempts=3):
-    """Run a script through TiLiA; a failed run (seen once, after loading a recording) is repeated from scratch."""
-    for attempt in range(attempts):
-        try:
-            return run_script(script, check=True)
-        except ScriptError:
-            if attempt == attempts - 1:
-                raise
-
-
 def convert_item(source, item, out, *, tilia=True, audio=False, titles=None, keys=None):
     """Write the CSVs and the script of one item, run TiLiA, and return its summary entry (None without TiLiA)."""
     out = Path(out)
@@ -403,7 +392,7 @@ def convert_item(source, item, out, *, tilia=True, audio=False, titles=None, key
     script.write_text(write_script(data, {k: v.resolve() for k, v in paths.items()}, tla, recording))
     if not tilia:
         return None
-    run_script_retrying(script)
+    run_script(script, check=True)
     counts, rows = count_tla(tla), source_rows(data)
     entry = {layer: {"components": counts[layer], "source_rows": rows[layer]} for layer in LAYERS}
     entry["lint"] = lint(tla, [paths["harmony"]])
@@ -442,7 +431,7 @@ def package(out, package_dir):
         copy = staging / tla.name
         copy.write_text(json.dumps(data))
         files.append(copy)
-    zip_path = build_package(PACKAGE_NAME, files, LICENCE, (HERE / "NOTICE.md").read_text(), out_dir=package_dir)
+    zip_path = build_package(PACKAGE_NAME, files, LICENCE, (HERE / "NOTICE.md").read_text(encoding="utf-8"), out_dir=package_dir)
     shutil.rmtree(staging)
     return zip_path
 

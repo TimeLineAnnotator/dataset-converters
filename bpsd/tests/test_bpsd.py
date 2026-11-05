@@ -416,3 +416,19 @@ def test_op010no2_numbers_never_go_back_but_at_the_exposition_repeat():
     assert numbers[178:190] == tuple(range(113, 125))
     assert numbers[198:206] == tuple(range(133, 141))
     assert numbers[-2:] == (202, 204)  # the first ending of the last repeat is not in the unfolded score
+
+
+def test_read_table_waits_for_a_file_held_for_a_moment(tmp_path, monkeypatch):
+    path = tmp_path / "t.csv"
+    path.write_text('"a"; b\n1;"2"\n', encoding="utf-8")
+    real_open, held = open, [True, True]
+
+    def holding_open(*args, **kwargs):
+        if held:
+            held.pop()
+            raise PermissionError(13, "held", str(path))
+        return real_open(*args, **kwargs)
+
+    monkeypatch.setattr(convert.time, "sleep", lambda s: None)
+    monkeypatch.setattr("builtins.open", holding_open)
+    assert convert.read_table(path) == [{"a": "1", "b": "2"}]

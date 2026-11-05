@@ -35,6 +35,8 @@ MD5 = "3466d49365ac30a59a6883dd522a5d62"
 ROOT = "mozart-piano-sonatas/"
 PACKAGE_NAME = "dezrann-mozart-tilia-layers"
 LICENCE_ID = "ODbL-1.0"
+CITATION = ("Couturier, L., Bigo, L., Hentschel, J., Lev\u00e9, F., Neuwirth, M. and Rohrmeier, M. (2024). "
+            "Mozart piano sonatas (v1.0). Recherche Data Gouv. https://doi.org/10.57745/OHRWPC")
 
 PIECES = [f"K{n}-{m}" for n in (279, 280, 283) for m in (1, 2, 3)]
 # Dezrann's label type -> (kind of TiLiA timeline's name, file stem)
@@ -119,11 +121,23 @@ def _q(value: str) -> str:
     return '"' + " ".join(str(value).replace('"', "'").split()) + '"'
 
 
+def merged_metadata(source_tla: Path) -> dict[str, str]:
+    """The metadata fields a merged file changes: it holds two licences, and these files never ship."""
+    source = json.loads(Path(source_tla).read_text())["media_metadata"]
+    names = " and ".join(name for name, _ in LAYERS.values())
+    return {
+        "licence": f"{source['licence']} (DCML's timelines); ODbL 1.0 ({LAYERS['Structure'][0]}, {LAYERS['Texture'][0]})",
+        "notes": f"{source['notes']} The timelines {names} are from Dezrann's Mozart piano sonatas, "
+                 f"licensed ODbL 1.0. Please cite: {CITATION}.",
+    }
+
+
 def write_script(source_tla: Path, out_tla: Path, structure_csv: Path, texture_csv: Path) -> str:
     """The text of the TiLiA script for one movement. Only this function depends on how TiLiA is driven
     (today ``open`` is a command of the script; a non-interactive ``tilia run`` will need it too)."""
     return "\n".join([
         f"open {source_tla}",
+        *(f"metadata set {_q(k)} {_q(v)}" for k, v in merged_metadata(source_tla).items()),
         f"timelines add hierarchy --name {_q(LAYERS['Structure'][0])}",
         f"timelines add hierarchy --name {_q(LAYERS['Texture'][0])}",
         f"timelines import hierarchy by-time --target-name {_q(LAYERS['Structure'][0])} --file {structure_csv}",

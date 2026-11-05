@@ -49,6 +49,13 @@ def test_lint_finds_no_errors(merged):
         assert s["lint"]["errors"] == 0, (piece, s["lint"]["examples"])
 
 
+def test_merged_files_credit_both_sources(merged):
+    out, _ = merged
+    md = json.loads((out / "tla" / "K279-1.tla").read_text())["media_metadata"]
+    assert "CC BY-NC-SA 4.0" in md["licence"] and "ODbL 1.0" in md["licence"]
+    assert "Dezrann" in md["notes"] and "10.57745/OHRWPC" in md["notes"]
+
+
 def test_bar_numbers_agree_with_dcml(merged):
     _, summary = merged
     for piece, s in summary.items():
