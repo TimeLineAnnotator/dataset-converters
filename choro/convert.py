@@ -26,6 +26,7 @@ sys.path.insert(0, str(HERE.parent))
 
 from common.download import fetch  # noqa: E402
 from common.package import build_package  # noqa: E402
+from common.roles import set_roles  # noqa: E402
 from common.runner import run_script  # noqa: E402
 
 ZIP_URL = "https://zenodo.org/records/21219604/files/DCMLab/choro-v1.3.3.zip?download=1"
@@ -558,6 +559,14 @@ def count_tla(path) -> dict[str, int]:
     }
 
 
+# Timeline roles that TiLiA's current format reads (metadata "role"), written after TiLiA saves
+ROLES = {
+    "Measures": {"role": "time_map"},
+    "Form": {"role": "form"},
+    "Harmony": {"role": "harmony"},
+}
+
+
 def convert(ids, out: Path, *, pieces=None, run_tilia=True, jobs: int = 4) -> dict:
     """Write CSVs, scripts and (with ``run_tilia``) .tla files for ``ids``; returns the summary.
 
@@ -580,6 +589,7 @@ def convert(ids, out: Path, *, pieces=None, run_tilia=True, jobs: int = 4) -> di
 
     def run(pid):
         run_script(scripts[pid], check=True)
+        set_roles((out / "tla" / f"{pid}.tla").resolve(), ROLES)
         counted = count_tla((out / "tla" / f"{pid}.tla").resolve())
         print(f"{pid}: {counted}", flush=True)
         return pid, counted
