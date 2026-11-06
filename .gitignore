@@ -12,8 +12,7 @@ import-all.txt
 tla/
 *.tla
 Beethoven_Piano_Sonata_Dataset_v*/
-dcml-mozart/*.csv
-dcml-mozart/import-script.txt
+dcml-mozart/out/
 
 # caches
 .cache/
