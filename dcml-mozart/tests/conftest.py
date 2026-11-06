@@ -1,6 +1,5 @@
 """Fixtures: the four fixture movements' tables, downloaded (md5-checked) into the cache."""
 import importlib.util
-import json
 from pathlib import Path
 
 import pytest
