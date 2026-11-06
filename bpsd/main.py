@@ -1,3 +1,4 @@
+import argparse
 import itertools
 from pathlib import Path
 
@@ -102,7 +103,6 @@ save {filename} --overwrite
     return script
 
 
-dataset_path = Path(r"./Beethoven_Piano_Sonata_Dataset_v2")
 pieces = [
     "Op002No1-01",
     "Op002No2-01",
@@ -172,64 +172,98 @@ performers = [
     ("WK64", "Wilhelm Kempff"),
 ]
 
-script_paths = []
 
-for (performer_code, performer_name), piece in itertools.product(performers, pieces):
-    filename = Path(f"Beethoven_{piece}.csv")
-    filename_performer = Path(f"Beethoven_{piece}_{performer_code}.csv")
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(description="Convert the Beethoven Piano Sonata Dataset into TiLiA import scripts.")
+    parser.add_argument("--dataset", default="./Beethoven_Piano_Sonata_Dataset_v2",
+                        help="folder of the unzipped dataset")
+    parser.add_argument("--pieces", nargs="+", default=pieces, metavar="PIECE",
+                        help="pieces to convert, e.g. Op049No2-01 (default: all 32)")
+    parser.add_argument("--performers", nargs="+", default=[code for code, _ in performers], metavar="CODE",
+                        help="performer codes (default: %s)" % " ".join(code for code, _ in performers))
+    parser.add_argument("--out", default="./import-data", help="folder for the CSVs and import scripts")
+    parser.add_argument("--tla-dir", default="tla", help="folder the import scripts save the .tla files to")
+    parser.add_argument("--all-script", default="import-all.txt", help="script that runs every import script")
+    return parser.parse_args(argv)
 
-    recording = dataset_path / "1_Audio" / filename_performer.with_suffix(".wav")
-    score = dataset_path / "0_RawData" / "score_xml_unfolded" / filename.with_suffix(".xml")
 
-    annotations_dir = dataset_path / "2_Annotations"
-    localkey = (annotations_dir / "ann_score_localkey" / filename)
-    structure_fine = (annotations_dir / "ann_score_structureFine" / filename)
-    structure_coarse = (annotations_dir / "ann_score_structureCoarse" / filename)
-    chords = (annotations_dir / "ann_score_chord" / filename)
-    measures = (annotations_dir / "ann_audio_measure" / filename_performer)
+def main(argv=None):
+    args = parse_args(argv)
+    dataset_path = Path(args.dataset)
+    out_dir = args.out
+    tla_dir_name = args.tla_dir
+    all_script = args.all_script
+    names = dict(performers)
+    unknown = [code for code in args.performers if code not in names]
+    if unknown:
+        raise SystemExit(f"unknown performer code(s): {' '.join(unknown)}")
+    selected_performers = [(code, names[code]) for code in args.performers]
+    selected_pieces = args.pieces
 
-    localkey_df = process_localkey_df(pd.read_csv(localkey, delimiter=';'))
-    structure_fine_df = process_fine_df(pd.read_csv(structure_fine, delimiter=';'))
-    structure_coarse_df = process_coarse_df(pd.read_csv(structure_coarse, delimiter=';'))
-    structure_df = pd.concat([structure_fine_df, structure_coarse_df])
-    chords_df = process_chords_df(pd.read_csv(chords, delimiter=';'))
-    measures_df = process_measures_df(pd.read_csv(measures, delimiter=';'))
+    # get_metadata reads performer_code as a module global
+    global performer_code
+    script_paths = []
 
-    output_dir = Path("./import-data", piece, performer_code)
-    tla_dir = Path("tla")
+    for (performer_code, performer_name), piece in itertools.product(selected_performers, selected_pieces):
+        filename = Path(f"Beethoven_{piece}.csv")
+        filename_performer = Path(f"Beethoven_{piece}_{performer_code}.csv")
 
-    output_dir.mkdir(parents=True, exist_ok=True)
-    tla_dir.mkdir(parents=True, exist_ok=True)
+        recording = dataset_path / "1_Audio" / filename_performer.with_suffix(".wav")
+        score = dataset_path / "0_RawData" / "score_xml_unfolded" / filename.with_suffix(".xml")
 
-    localkey_output = output_dir / "localkey.csv"
-    structure_output = output_dir / "structure.csv"
-    measures_output = output_dir / "measures.csv"
-    chords_output = output_dir / "chords.csv"
+        annotations_dir = dataset_path / "2_Annotations"
+        localkey = (annotations_dir / "ann_score_localkey" / filename)
+        structure_fine = (annotations_dir / "ann_score_structureFine" / filename)
+        structure_coarse = (annotations_dir / "ann_score_structureCoarse" / filename)
+        chords = (annotations_dir / "ann_score_chord" / filename)
+        measures = (annotations_dir / "ann_audio_measure" / filename_performer)
 
-    localkey_df.to_csv(localkey_output, index=False)
-    structure_df.to_csv(structure_output, index=False)
-    measures_df.to_csv(measures_output, index=False)
-    chords_df.to_csv(chords_output, index=False)
+        localkey_df = process_localkey_df(pd.read_csv(localkey, delimiter=';'))
+        structure_fine_df = process_fine_df(pd.read_csv(structure_fine, delimiter=';'))
+        structure_coarse_df = process_coarse_df(pd.read_csv(structure_coarse, delimiter=';'))
+        structure_df = pd.concat([structure_fine_df, structure_coarse_df])
+        chords_df = process_chords_df(pd.read_csv(chords, delimiter=';'))
+        measures_df = process_measures_df(pd.read_csv(measures, delimiter=';'))
 
-    metadata = get_metadata(piece, performer_name)
+        output_dir = Path(out_dir, piece, performer_code)
+        tla_dir = Path(tla_dir_name)
 
-    import_script = get_import_script(
-        (tla_dir / filename_performer).resolve().with_suffix(".tla"),
-        recording.resolve(),
-        measures_output.resolve(),
-        localkey_output.resolve(),
-        structure_output.resolve(),
-        chords_output.resolve(),
-        score.resolve(),
-        metadata
-    )
+        output_dir.mkdir(parents=True, exist_ok=True)
+        tla_dir.mkdir(parents=True, exist_ok=True)
 
-    with open(output_dir / "import.txt", "w") as f:
-        f.write(import_script)
+        localkey_output = output_dir / "localkey.csv"
+        structure_output = output_dir / "structure.csv"
+        measures_output = output_dir / "measures.csv"
+        chords_output = output_dir / "chords.csv"
 
-    script_paths.append(str((output_dir / "import.txt").resolve()))
+        localkey_df.to_csv(localkey_output, index=False)
+        structure_df.to_csv(structure_output, index=False)
+        measures_df.to_csv(measures_output, index=False)
+        chords_df.to_csv(chords_output, index=False)
 
-with open("import-all.txt", "w") as f:
-    for path in script_paths:
-        f.write(f"script {path}\n")
-        f.write("clear --force\n")
+        metadata = get_metadata(piece, performer_name)
+
+        import_script = get_import_script(
+            (tla_dir / filename_performer).resolve().with_suffix(".tla"),
+            recording.resolve(),
+            measures_output.resolve(),
+            localkey_output.resolve(),
+            structure_output.resolve(),
+            chords_output.resolve(),
+            score.resolve(),
+            metadata
+        )
+
+        with open(output_dir / "import.txt", "w") as f:
+            f.write(import_script)
+
+        script_paths.append(str((output_dir / "import.txt").resolve()))
+
+    with open(all_script, "w") as f:
+        for path in script_paths:
+            f.write(f"script {path}\n")
+            f.write("clear --force\n")
+
+
+if __name__ == "__main__":
+    main()

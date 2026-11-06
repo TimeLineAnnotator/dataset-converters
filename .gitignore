@@ -5,3 +5,15 @@ __pycache__/
 *.egg-info/
 build/
 dist/
+
+# converter outputs and downloaded datasets
+import-data/
+import-all.txt
+tla/
+*.tla
+Beethoven_Piano_Sonata_Dataset_v*/
+dcml-mozart/*.csv
+dcml-mozart/import-script.txt
+
+# caches
+.cache/
