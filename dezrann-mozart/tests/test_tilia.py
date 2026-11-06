@@ -66,3 +66,11 @@ def test_originals_are_untouched(merged, dcml_out, dez):
     out, _ = merged
     for piece in dez.PIECES:
         assert (out / "work" / f"{piece}.tla").read_bytes() == (dcml_out / "tla" / f"{piece}.tla").read_bytes()
+
+
+def test_roles_in_the_merged_files(merged):
+    out, _ = merged
+    data = json.loads((out / "tla" / "K279-1.tla").read_text())
+    assert {t["name"]: t["metadata"]["role"] for t in data["timelines"].values() if "metadata" in t} == {
+        "Measures": "time_map", "Phrases": "phrases", "Harmony": "harmony", "Cadences": "cadences",
+        "Structure (Dezrann)": "form", "Texture (Dezrann)": "texture"}

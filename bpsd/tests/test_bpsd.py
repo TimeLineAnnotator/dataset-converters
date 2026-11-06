@@ -432,3 +432,10 @@ def test_read_table_waits_for_a_file_held_for_a_moment(tmp_path, monkeypatch):
     monkeypatch.setattr(convert.time, "sleep", lambda s: None)
     monkeypatch.setattr("builtins.open", holding_open)
     assert convert.read_table(path) == [{"a": "1", "b": "2"}]
+
+
+def test_tla_roles(converted):
+    out = converted
+    _, tl = timelines(out / "tla" / f"{FIXTURES[0]}.tla")
+    assert {n: t["metadata"]["role"] for n, t in tl.items() if "metadata" in t} == {
+        "Measures": "time_map", "Structure": "form", "Harmony": "harmony"}
