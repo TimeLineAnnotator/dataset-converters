@@ -50,7 +50,10 @@ that transfer as it is and do not place anything again.
   [format-converters](https://github.com/TimeLineAnnotator/format-converters). Chords labelled `N` or `X` are not chords and
   are not placed. A key is written before the chords that start at the same time.
 - **Structure.** Rows that BPSD repeats verbatim are written once. Fine labels without a colon (such as
-  `Development`) are kept as they are.
+  `Development`) are kept as they are. In Op. 31 No. 3, BPSD starts the repeated exposition's second group on the
+  downbeat of bar 45, about a second before its transition ends on beat 3. Both are on beat 3 in the first
+  exposition, so the files start the second group where the transition ends, in all eleven performances, with a
+  comment on the section (reported in <https://github.com/groupmm/BPSD_scripts/issues/1>).
 - **No scores.** The scores of BPSD are not part of these files.
 - **No audio.** The files carry no recording and no media path; the media length is the end of the annotations.
 

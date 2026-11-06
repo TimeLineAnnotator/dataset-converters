@@ -27,7 +27,7 @@ python bpsd/convert.py --out OUT [--only ID ...] [--package DIR] [--no-tilia] [-
 - `--no-tilia`: write the CSVs and scripts only.
 
 It writes `OUT/csv/<ID>/*.csv`, `OUT/scripts/<ID>.txt`, `OUT/tla/<ID>.tla` and `OUT/summary.json`, which counts every layer in the saved file
-against the rows of the source files. The command syntax lives in one function, `write_script`.
+against the rows of the source files and holds the checks of `common.lint` under `lint`. The command syntax lives in one function, `write_script`.
 
 `convert.ipynb` does the full run (it downloads the whole 2.1 GB archive, checks its md5, converts all 352 items and builds the package);
 set `DATASET_CONVERTERS_OUT` to the output folder and `TILIA` to TiLiA's command line. It needs TiLiA with `timelines add harmony` and `timelines import harmony`.

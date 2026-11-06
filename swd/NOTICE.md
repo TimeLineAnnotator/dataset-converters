@@ -53,9 +53,11 @@ from each performance's own annotation files and are in the key that is sung.
   `summary.json` names the moved timelines.
 - **Chords.** Harte labels (`C:min7/G`, `Eb:maj`) are written as the text that TiLiA's harmony timeline
   stores exactly, by [format-converters](https://github.com/TimeLineAnnotator/format-converters), and are shown as
-  Roman numerals. A chord that TiLiA can only approximate (for
-  example an added ninth, or a bass outside the chord) is shown with its source label as custom text, and the
-  comment says what TiLiA stores. A chord that TiLiA cannot hold at all is not dropped: it is a marker on
+  Roman numerals. A bass outside the chord sounds with it, as mir_eval reads Harte labels. When TiLiA stores
+  that chord exactly, it is another chord than the label names (`B:dim7/C` is stored as `Bob9/C`), so the source
+  label is shown as custom text and the comment names the stored chord. A chord that TiLiA can only approximate
+  (for example an added ninth) is shown with its source label as custom text, and the comment says what TiLiA
+  stores. A chord that TiLiA cannot hold at all is not dropped: it is a marker on
   "Chords (unparsed)" with the source label and the reason. The labels N and X (no chord) are not placed.
 - Only the annotations are converted: no score, no lyrics, no note annotations.
 

@@ -43,6 +43,12 @@ def test_all_nine_counts_equal_dez_labels(merged, dez, root):
         assert s["dcml_unchanged"], piece
 
 
+def test_lint_finds_no_errors(merged):
+    _, summary = merged
+    for piece, s in summary.items():
+        assert s["lint"]["errors"] == 0, (piece, s["lint"]["examples"])
+
+
 def test_merged_files_credit_both_sources(merged):
     out, _ = merged
     md = json.loads((out / "tla" / "K279-1.tla").read_text())["media_metadata"]

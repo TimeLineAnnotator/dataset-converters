@@ -71,6 +71,19 @@ def test_structure_levels_and_duplicates():
         (2, "Exposition"), (1, "FirstGroup"), (2, "Development"), (1, "Development")]
 
 
+def test_a_late_start_starts_where_the_section_before_ends():
+    fine = rows("start;end;structure\n0.0;2.0;Exposition:Transition\n2.0;3.0;Exposition:SecondGroup\n"
+                "3.0;5.6;Exposition:Transition\n5.0;7.0;Exposition:SecondGroup")
+    out = convert.structure_rows(fine, [], "Op031No3-01")
+    assert [(r["start"], r["end"]) for r in out] == [("0.0", "2.0"), ("2.0", "3.0"), ("3.0", "5.6"), ("5.6", "7.0")]
+    assert [bool(r["comments"]) for r in out] == [False, False, False, True]
+    assert all(not r["comments"] for r in convert.structure_rows(fine, [], "Op002No1-01"))  # only the listed piece
+    fixed = rows("start;end;structure\n0.0;2.0;Exposition:SecondGroup\n3.0;5.0;Exposition:Transition\n"
+                 "5.0;7.0;Exposition:SecondGroup")
+    with pytest.raises(ValueError, match="no longer starts before"):
+        convert.structure_rows(fixed, [], "Op031No3-01")
+
+
 def test_write_script_is_the_one_place_for_commands(tmp_path):
     csvs = {k: tmp_path / f"{k}.csv" for k in ("measures", "structure", "harmony", "unparsed")}
     text = convert.write_script("X_AB96", csvs, tmp_path / "x.tla", {"title": "T"}, media_length=12.5)
@@ -141,6 +154,16 @@ def test_structure_levels(fixture_out, source):
         assert not any(":" in r["label"] for r in out)
 
 
+def test_no_fine_sections_overlap_in_op31_no3(source):
+    for performer in convert.PERFORMERS:
+        item = f"Op031No3-01_{performer}"
+        out = convert.structure_rows(convert.annotation(source, "structureFine", item),
+                                     convert.annotation(source, "structureCoarse", item), "Op031No3-01")
+        fine = [r for r in out if r["level"] == 1]
+        assert all(float(b["start"]) >= float(a["end"]) for a, b in zip(fine, fine[1:])), item
+        assert sum(bool(r["comments"]) for r in fine) == 1, item
+
+
 def test_keys_come_before_chords_and_every_chord_is_as_reported(fixture_out, source):
     from format_converters import _harte
     from format_converters.harmony import translate_chord, translate_key
@@ -199,10 +222,17 @@ def test_components_equal_source_rows(converted):
     summary = json.loads((converted / "summary.json").read_text())
     assert set(summary) == set(FIXTURES)
     for item, layers in summary.items():
+        layers = {k: v for k, v in layers.items() if k != "lint"}
         assert set(layers) == {"Measures", "Structure", "Harmony/keys", "Harmony/chords"}
         for layer, counts in layers.items():
             assert counts["components"] == counts["source_rows"], (item, layer)
     assert summary[FIXTURES[0]]["Measures"]["source_rows"] == 202
+
+
+def test_lint_finds_no_errors(converted):
+    summary = json.loads((converted / "summary.json").read_text())
+    for item, entry in summary.items():
+        assert entry["lint"]["errors"] == 0, (item, entry["lint"]["examples"])
 
 
 def test_tla_timelines_and_metadata(converted):

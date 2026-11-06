@@ -12,7 +12,7 @@ Run it with the repository root on `PYTHONPATH` (or after `pip install -e .`), `
 - `--package DIR` builds `DIR/dcml-mozart-v2.3-tilia.zip`: the `.tla` files with file and media paths emptied, `LICENSE` and `NOTICE.md`.
 - `--no-tilia` writes only the CSVs and scripts.
 
-Output under `DIR`: `csv/<ID>/*.csv`, `scripts/<ID>.txt` (the TiLiA script, made by `write_script`), `tla/<ID>.tla`, and `summary.json` with, per movement and layer, the components in the saved file and the rows counted from the source tables. `convert.ipynb` does the full run (it reads `DATASET_CONVERTERS_OUT`).
+Output under `DIR`: `csv/<ID>/*.csv`, `scripts/<ID>.txt` (the TiLiA script, made by `write_script`), `tla/<ID>.tla`, and `summary.json` with, per movement and layer, the components in the saved file and the rows counted from the source tables, and the checks of `common.lint` under `lint`. `convert.ipynb` does the full run (it reads `DATASET_CONVERTERS_OUT`).
 
 The files it downloads are pinned: `md5s.json` holds the md5 of each of the 109 tables (checked by `common.download.fetch`), `dcml_files.txt` lists the movements.
 

@@ -23,10 +23,17 @@ def test_counts_equal_source_rows(converted, movements):
     out, summary = converted
     assert sorted(summary) == sorted(FIXTURES)
     for p in FIXTURES:
-        assert list(summary[p]) == ["Measures", "Harmony/keys", "Harmony/chords", "Cadences", "Phrases"]
-        for layer, v in summary[p].items():
+        layers = {k: v for k, v in summary[p].items() if k != "lint"}
+        assert list(layers) == ["Measures", "Harmony/keys", "Harmony/chords", "Cadences", "Phrases"]
+        for layer, v in layers.items():
             assert v["components"] == v["source_rows"] == movements[p].source_rows[layer], (p, layer)
         assert json.loads((out / "summary.json").read_text()) == summary
+
+
+def test_lint_finds_no_errors(converted):
+    _, summary = converted
+    for p in FIXTURES:
+        assert summary[p]["lint"]["errors"] == 0, (p, summary[p]["lint"]["examples"])
 
 
 def test_timelines_and_kinds(converted):
