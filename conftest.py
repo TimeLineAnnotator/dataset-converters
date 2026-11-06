@@ -4,8 +4,6 @@ import shutil
 
 import pytest
 
-from common.download import fetch, fetch_member
-
 BPSD_ZIP = "https://zenodo.org/records/12783403/files/Beethoven_Piano_Sonata_Dataset_v2.zip?download=1"
 BPSD_ROOT = "Beethoven_Piano_Sonata_Dataset_v2"
 BPSD_PIECE = "Op049No2-01"
@@ -27,7 +25,7 @@ DCML_FILES = {
 }
 
 
-NETWORK_FIXTURES = {"bpsd_dataset", "dcml_dataset", "files", "root", "source"}  # fixtures that download
+NETWORK_FIXTURES = {"files", "root", "source"}  # fixtures that download
 
 
 def pytest_collection_modifyitems(items):
@@ -47,25 +45,3 @@ def tilia():
         pytest.skip("TILIA is unset and no 'tilia' is on PATH")
     return path
 
-
-@pytest.fixture(scope="session")
-def bpsd_dataset(tmp_path_factory):
-    """The BPSD fixture laid out like the unzipped dataset; returns the dataset folder."""
-    root = tmp_path_factory.mktemp("bpsd") / BPSD_ROOT
-    for member, md5 in BPSD_MEMBERS.items():
-        src = fetch_member(BPSD_ZIP, f"{BPSD_ROOT}/{member}", md5)
-        dst = root / member
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(src, dst)
-    return root
-
-
-@pytest.fixture(scope="session")
-def dcml_dataset(tmp_path_factory):
-    """The DCML fixture laid out as <root>/harmonies and <root>/measures; returns the root."""
-    root = tmp_path_factory.mktemp("dcml")
-    for rel, md5 in DCML_FILES.items():
-        dst = root / rel
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(fetch(DCML_BASE + rel, md5), dst)
-    return root
