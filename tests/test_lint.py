@@ -68,9 +68,10 @@ def test_roots_are_read_against_the_key_in_force(tmp_path):
     assert rules(tmp_path, [mode(0, C, minor=True), chord(1, D, 1), mode(2, B)]) == {"root-fits-respelled": 1}
 
 
-def test_diminished_ninths_are_skipped_until_tilia_has_7b9(tmp_path):
-    ninth = dict(chord(1, A, 1), quality="diminished-ninth")  # C7b9 stored as A#o9
-    assert rules(tmp_path, [mode(0, C, minor=True), ninth]) == {}
+def test_diminished_ninths_are_read_like_any_chord(tmp_path):
+    # a 7-flat-9 is stored on its own root now that TiLiA has the quality, so nothing stands in for one
+    ninth = dict(chord(1, D, 1), quality="diminished-ninth")  # D-sharp in C minor: E-flat fits
+    assert rules(tmp_path, [mode(0, C, minor=True), ninth]) == {"root-fits-respelled": 1}
 
 
 def test_custom_applied_and_keyless_chords_are_skipped(tmp_path):

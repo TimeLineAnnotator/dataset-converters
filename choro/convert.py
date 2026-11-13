@@ -260,8 +260,8 @@ def same_quality(chord, without_its_bass) -> bool:
 def translate(label: str, harte: str, key: str) -> Placed:
     """A chord of the table (its label as transcribed, its Harte label) under a TiLiA key.
 
-    The shared translator gives the symbol. Only a symbol on the source's root is kept: TiLiA can read the
-    notes of C7(b9) as a diminished ninth on B-flat, which has the notes but not the chord. A chord with no
+    The shared translator gives the symbol, on the source's root only: TiLiA can read the notes of Gm(b6) as
+    E-flat major seventh over G, which has the notes but not the chord. A chord with no
     exact symbol is stored as the first of these that has one, with the label shown as custom text: the
     chord without its bracketed tones, without its bass, without both. Failing those, the translator's
     own approximation on the same root; failing that, the chord goes to the unparsed markers.
