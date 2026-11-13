@@ -38,12 +38,12 @@ Every file has four timelines, all present even when empty:
   transcribed label is shown as custom text and the stored chord is, in this order:
   - the same notes under another chord's name, when the bass is not in the chord and the symbol takes it
     in (`D/C` is stored as D7/C);
-  - the chord without its added tones in brackets (`G7(13)` as G7, `D7(b9)` as D7);
+  - the chord without its added tones in brackets (`G7(4)` as G7, `F7(b9)(b13)` as F7);
   - the chord without its bass, or without both;
   - the shared translator's own approximation on the same root.
 
   Each such chord's comment says which. A symbol on another root than the transcription's is never used,
-  although TiLiA can read some chords' notes that way (D7(b9) as a diminished ninth on C).
+  although TiLiA can read some chords' notes that way (`Gm(b6)` as E♭maj7 over G): it is stored as Gm.
 - **Chords (unparsed)** (marker): chords none of the above can store. In v1.3.3 there are none. `NC` (no
   chord) is not a chord and is not placed.
 

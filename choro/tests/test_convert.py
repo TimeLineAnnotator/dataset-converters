@@ -101,9 +101,14 @@ def test_triad_over_its_minor_seventh(choro):
 
 
 def test_never_another_root(choro):
-    placed = choro.translate("D7(b9)", "D:7(b9)", "g")
-    assert (placed.symbol, placed.display_mode, placed.custom_text) == ("D7", "custom", "D7(b9)")
+    # Gm(b6) has the notes of Ebmaj7/G, which names another chord
+    placed = choro.translate("Gm(b6)", "G:min(b6)", "g")
+    assert (placed.symbol, placed.display_mode, placed.custom_text) == ("Gm", "custom", "Gm(b6)")
     assert "stored without its added tones" in placed.comments
+
+
+def test_tilias_added_tone_qualities_are_exact(choro):
+    assert choro.translate("D7(b9)", "D:7(b9)", "g") == choro.Placed("D7b9", "letter")
 
 
 def test_exact_chords_show_as_letters(choro):

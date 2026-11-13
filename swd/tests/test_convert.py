@@ -85,7 +85,7 @@ def test_harte_chords_are_written_as_format_converters_report_them(written):
 
 @pytest.mark.parametrize("label, changed", [
     ("B:dim7/C", True),  # Bob9/C
-    ("D:(3,5,b7,b9)/A#", True),  # A#+M11
+    ("D:(3,5,b7,b9)/A#", False),  # approximated on D, never A#+M11 on another root
     ("D:maj/b7", True),  # D7/C
     ("C:min/G", False),  # the bass is in the chord
     ("C:maj/#4", False),  # no exact symbol
@@ -215,7 +215,8 @@ def test_tla_chord_display(converted):
     out, _ = converted
     _, tl = read_tla(out / "tla" / f"{SONG2}.tla")
     custom = [c for c in components(tl["Harmony"]) if c["kind"] == "HARMONY" and c["display_mode"] == "custom"]
-    assert {c["custom_text"] for c in custom} == {"A:dim/Bb", "G:(3,5,b7,b9)/B", "G:(3,b5,b7,b9)/Db"}  # spelled from the score
+    # spelled from the score; G:(3,5,b7,b9)/B is exact on its own root, as G7b9/B
+    assert {c["custom_text"] for c in custom} == {"A:dim/Bb", "G:(3,b5,b7,b9)/Db"}
     assert all(c["comments"] for c in custom)
 
 
