@@ -21,11 +21,11 @@ Use Python 3.12: the converters need 3.12 or newer, TiLiA 3.12 or older. They us
 ```
 pip install -e .
 python -m venv .tilia-cli
-.tilia-cli/bin/pip install "TiLiA @ git+https://github.com/TimeLineAnnotator/desktop@406f5e6aca7b372e09d58200d9c62d1df17829cf"
+.tilia-cli/bin/pip install "TiLiA @ git+https://github.com/TimeLineAnnotator/desktop@v0.7.5"
 export TILIA=$PWD/.tilia-cli/bin/tilia           # on Windows, .tilia-cli\Scripts\tilia.exe
 ```
 
-Older releases of TiLiA stop at `timelines add harmony` (`invalid choice: 'harmony'`).
+Releases before 0.7.5 stop at `timelines add harmony` (`invalid choice: 'harmony'`).
 
 ## Run a converter
 
