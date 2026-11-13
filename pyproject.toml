@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Converters from published music-analysis datasets to TiLiA files"
 requires-python = ">=3.12"
 dependencies = [
-    "format-converters @ git+https://github.com/TimeLineAnnotator/format-converters@7aab5fc0ae3569bf73ba243e14545f09e52a54a9",
+    "format-converters @ git+https://github.com/TimeLineAnnotator/format-converters@b8e6411e8e3358863323becebca8f60a3e184c85",
 ]
 
 [project.optional-dependencies]
